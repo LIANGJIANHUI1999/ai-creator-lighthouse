@@ -64,6 +64,7 @@ function render() {
   $('selected-status').innerHTML = tag(latest?.route.status ?? 'unknown');
   const metricNames = ['performance', 'lcpMs', 'cls', 'tbtMs'];
   $('metrics').innerHTML = metricNames.map(key => `<div class="metric"><span>${h(t(key))}</span><strong>${fmt(latest?.route.metrics[key], key)}<small>${h(units(key))}</small></strong><span class="meta">${h(t('budget'))} ${['lcpMs', 'cls', 'tbtMs'].includes(key) ? '≤' : '≥'} ${fmt(config.targets[key], key)}</span></div>`).join('');
+  $('categories').innerHTML = ['accessibility', 'bestPractices', 'seo'].map(key => `<span>${h(t(key))} <strong>${fmt(latest?.route.metrics[key], key)}</strong><small>${h(t('budget'))} ≥${config.targets[key]}</small></span>`).join('');
   $('periods').innerHTML = [[7, 'sevenDays'], [30, 'thirtyDays'], [90, 'ninetyDays'], [0, 'allTime']].map(([value, key]) => button(value, t(key), state.days === value, 'data-days')).join('');
   $('metric-buttons').innerHTML = metricNames.map(key => button(key, t(key), state.metric === key, 'data-metric')).join('');
   const points = seriesFor(summaries, state.environment, state.route, state.metric, state.days);

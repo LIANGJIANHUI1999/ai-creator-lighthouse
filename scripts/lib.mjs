@@ -123,3 +123,7 @@ export async function runCollection({ config, plan, audit, saveReport, metadata,
   }
   return { schemaVersion: 1, ...metadata, environment: plan.environment, origin: plan.origin, profile: config.profile, runsPerRoute: plan.runs, targets: config.targets, critical: config.critical, routes };
 }
+
+export function pipelineHealthy(health, { event, collection, publish, deploy }) {
+  return health.failed === 0 && (collection === 'success' || event === 'push' && collection === 'skipped') && publish === 'success' && deploy === 'success';
+}

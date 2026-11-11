@@ -6,7 +6,7 @@ import os from 'node:os';
 import { parse } from 'yaml';
 import { execFileSync } from 'node:child_process';
 import { saveHistory } from '../scripts/history-git.mjs';
-import { median, selectPlan, validateConfig, metricStatus, summarizeRoute, extractResult, runCollection, regression, comparableBaseline } from '../scripts/lib.mjs';
+import { median, selectPlan, validateConfig, metricStatus, summarizeRoute, extractResult, runCollection, regression, comparableBaseline, pipelineHealthy } from '../scripts/lib.mjs';
 import { archive, mergeHistory, latestRoutes } from '../scripts/archive.mjs';
 import { build } from '../scripts/build.mjs';
 import { latestForRoute, seriesFor, artifactAvailable, dataPresentation, escapeHtml } from '../web/model.mjs';
@@ -175,10 +175,26 @@ test('first history publication works from a detached worktree to a new remote b
   git(['init', '--bare', remote]); git(['init', working]);
   git(['config', 'user.name', 'Lighthouse test'], working); git(['config', 'user.email', 'test@example.invalid'], working);
   git(['commit', '--allow-empty', '-m', 'Initial'], working); git(['checkout', '--detach'], working); git(['remote', 'add', 'origin', remote], working);
+  assert.equal(saveHistory(working, 'Empty initial history'), false);
   await fs.mkdir(path.join(working, 'history')); await fs.writeFile(path.join(working, 'history', '100-1-production.json'), JSON.stringify(summary()));
   assert.equal(saveHistory(working, 'Archive first batch'), true);
   assert.match(git(['--git-dir', remote, 'show', 'refs/heads/monitor-data:history/100-1-production.json']), /production/);
   assert.equal(saveHistory(working, 'Idempotent archive'), false);
   await fs.writeFile(path.join(working, 'history', '101-1-production.json'), JSON.stringify(summary({ id: '101-1-production' })));
   assert.equal(saveHistory(working, 'Archive second batch'), true);
+});
+
+test('pipeline health distinguishes a publish-only push from missing requested measurements', () => {
+  const published = { event: 'push', collection: 'skipped', publish: 'success', deploy: 'success' };
+  assert.equal(pipelineHealthy({ failed: 0 }, published), true);
+  assert.equal(pipelineHealthy({ failed: 0 }, { ...published, event: 'workflow_dispatch' }), false);
+  assert.equal(pipelineHealthy({ failed: 0 }, { ...published, event: 'schedule', collection: 'success' }), true);
+  assert.equal(pipelineHealthy({ failed: 1 }, { ...published, collection: 'success' }), false);
+  assert.equal(pipelineHealthy({ failed: 0 }, { ...published, deploy: 'failure' }), false);
+});
+
+test('quality status includes the other Lighthouse categories even with a high performance score', () => {
+  const result = summarizeRoute(config.routes[0], [{ metrics: { ...metrics, performance: 99, bestPractices: 50 }, report: 'sample' }], [], 1, config);
+  assert.equal(result.metrics.performance, 99);
+  assert.equal(result.status, 'critical');
 });

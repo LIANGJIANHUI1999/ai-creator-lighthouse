@@ -62,7 +62,7 @@ jobs:
   collect:
     name: Collect · ${{ matrix.environment }}
     needs: quality-gate
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && github.event_name != 'push'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
@@ -129,6 +129,7 @@ jobs:
             git worktree add --detach monitor-data "$initial"
           fi
       - uses: actions/download-artifact@v4
+        if: github.event_name != 'push'
         with:
           pattern: lighthouse-*-${{ github.run_id }}-${{ github.run_attempt }}
           path: incoming
@@ -142,10 +143,16 @@ jobs:
             if [ -d "$folder" ]; then mv "$folder" "incoming/$target"; fi
           done
       - name: Append immutable metric history
+        if: github.event_name != 'push'
         env:
           GITHUB_TOKEN: ${{ github.token }}
           TARGET_ENVIRONMENTS: ${{ inputs.environment == 'production' && 'production' || inputs.environment == 'staging' && 'staging' || 'production,staging' }}
         run: node scripts/archive.mjs
+      - name: Record publication-only health
+        if: github.event_name == 'push'
+        run: |
+          mkdir -p artifacts
+          echo '{"failed":0,"summaries":[]}' > artifacts/health.json
       - name: Save history without raw report blobs
         run: node scripts/history-git.mjs
       - name: Build static dashboard with latest page reports
@@ -163,6 +170,7 @@ jobs:
   deploy:
     name: Publish dashboard
     needs: [quality-gate, publish]
+    if: ${{ !cancelled() && needs.quality-gate.result == 'success' && needs.publish.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -182,11 +190,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: monitor-health-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Surface collection failures after reports are published
         env:
+          EVENT: ${{ github.event_name }}
           COLLECTION_RESULT: ${{ needs.collect.result }}
           PUBLISH_RESULT: ${{ needs.publish.result }}
           DEPLOY_RESULT: ${{ needs.deploy.result }}
@@ -194,7 +204,8 @@ jobs:
           node --input-type=module <<'JS'
           import fs from 'node:fs';
           const health = JSON.parse(fs.readFileSync('health.json', 'utf8'));
-          const healthy = !health.failed && [process.env.COLLECTION_RESULT, process.env.PUBLISH_RESULT, process.env.DEPLOY_RESULT].every(result => result === 'success');
+          const { pipelineHealthy } = await import('./scripts/lib.mjs');
+          const healthy = pipelineHealthy(health, { event: process.env.EVENT, collection: process.env.COLLECTION_RESULT, publish: process.env.PUBLISH_RESULT, deploy: process.env.DEPLOY_RESULT });
           if (!healthy) { console.error('Collection or publication incomplete. Available evidence was archived before this check.'); process.exitCode = 1; }
           else console.log('Both collection and publication completed. Inspect metric budgets on the dashboard.');
           JS

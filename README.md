@@ -34,7 +34,7 @@ GitHub schedule 只从默认分支触发，可能延迟或丢弃高负载时的�
 
 页面 ID：`landing`、`home`、`ai-video`、`video-create`、`image-create`、`tools`、`clothes-transfer`、`editor`。
 
-推送到 `main` 也会运行完整采集与看板发布；PR 仅执行代码质量检查与测试，不采集、不写历史、不部署。
+推送到 `main` 会执行检查并用既有记录刷新看板，避免修改看板时重复测量线上页面。定时任务与手动运行执行实际采集；PR 仅执行代码质量检查与测试，不采集、不写历史、不部署。
 
 ## 如何使用看板
 

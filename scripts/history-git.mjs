@@ -1,8 +1,11 @@
 import { execFileSync, spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 export function saveHistory(directory, message) {
   const git = args => execFileSync('git', ['-C', directory, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  if (!existsSync(path.join(directory, 'history'))) return false;
   git(['add', 'history']);
   const diff = spawnSync('git', ['-C', directory, 'diff', '--cached', '--quiet']);
   if (diff.status === 0) return false;
