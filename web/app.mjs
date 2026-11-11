@@ -1,8 +1,8 @@
 import { translate } from './i18n.mjs';
-import { latestForRoute, seriesFor, artifactAvailable, escapeHtml as h } from './model.mjs';
+import { latestForRoute, seriesFor, artifactAvailable, dataPresentation, escapeHtml as h } from './model.mjs';
 const $ = id => document.getElementById(id);
 const query = new URLSearchParams(location.search);
-const state = { locale: query.get('lang') === 'en' ? 'en' : 'zh', environment: query.get('env') === 'staging' ? 'staging' : 'production', route: query.get('page') ?? 'landing', metric: 'performance', days: 30, data: null };
+const state = { locale: query.get('lang') === 'en' ? 'en' : 'zh', environment: query.get('env') === 'staging' ? 'staging' : 'production', route: query.get('page') ?? 'landing', metric: 'performance', days: 30, loading: true, error: false, data: null };
 const t = key => translate(state.locale, key);
 const fmt = (value, key) => Number.isFinite(value) ? new Intl.NumberFormat(state.locale, { maximumFractionDigits: key === 'cls' ? 3 : 0 }).format(value) : '—';
 const date = value => value ? new Intl.DateTimeFormat(state.locale === 'zh' ? 'zh-CN' : 'en-GB', { timeZone: 'Asia/Shanghai', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value)) : '—';
@@ -33,8 +33,15 @@ function chart(points, metric) {
   return `<svg viewBox="0 0 1000 358" role="img" aria-label="${h(`${t(metric)} · ${units(metric)} · ${t('dateAxis')}`)}"><title>${h(`${t(metric)} · ${units(metric)}`)}</title><text x="${left}" y="15">${h(`${t(metric)} · ${units(metric)}`)}</text>${ticks}<line x1="${left}" x2="${right}" y1="${y(target)}" y2="${y(target)}" class="target-line"/><text x="${right}" y="${Math.max(16, y(target) - 8)}" text-anchor="end" class="target-label">${h(`${t('budget')} ${fmt(target, metric)}`)}</text>${line}${circles}<text x="${left}" y="322">${h(date(points[0].date))}</text>${points.length > 1 ? `<text x="${right}" y="322" text-anchor="end">${h(date(points.at(-1).date))}</text>` : ''}<text x="${(left + right) / 2}" y="348" text-anchor="middle">${h(t('dateAxis'))}</text></svg>${points.length === 1 ? `<p class="single-point">${h(t('singlePoint'))}</p>` : ''}`;
 }
 
+function renderLoadStatus() {
+  const view = dataPresentation(state);
+  $('load-status').hidden = view.hidden;
+  $('load-status').innerHTML = view.key ? `${h(t(view.key))}${view.retry ? ` <button type="button" id="retry">${h(t('retry'))}</button>` : ''}` : '';
+}
+
 function render() {
   localize();
+  renderLoadStatus();
   if (!state.data) return;
   const { config, summaries, reports } = state.data;
   if (!config.routes.some(route => route.id === state.route)) state.route = config.routes[0].id;
@@ -79,8 +86,9 @@ function render() {
 
 async function load() {
   $('refresh').disabled = true;
-  $('load-status').hidden = false;
-  $('load-status').textContent = t('loading');
+  state.loading = true;
+  state.error = false;
+  renderLoadStatus();
   $('dashboard').setAttribute('aria-busy', 'true');
   try {
     const response = await fetch('./data.json', { cache: 'no-store' });
@@ -89,11 +97,12 @@ async function load() {
     if (data.schemaVersion !== 1 || !Array.isArray(data.summaries)) throw new Error('Invalid data');
     state.data = data;
     $('dashboard').hidden = !data.summaries.length;
-    $('load-status').hidden = data.summaries.length > 0;
-    $('load-status').textContent = t('empty');
+    state.loading = false;
     render();
   } catch {
-    $('load-status').innerHTML = `${h(t('loadError'))} <button type="button" id="retry">${h(t('retry'))}</button>`;
+    state.loading = false;
+    state.error = true;
+    renderLoadStatus();
   } finally { $('refresh').disabled = false; $('dashboard').removeAttribute('aria-busy'); }
 }
 

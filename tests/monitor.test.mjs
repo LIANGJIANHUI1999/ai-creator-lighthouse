@@ -4,10 +4,12 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { parse } from 'yaml';
+import { execFileSync } from 'node:child_process';
+import { saveHistory } from '../scripts/history-git.mjs';
 import { median, selectPlan, validateConfig, metricStatus, summarizeRoute, extractResult, runCollection, regression, comparableBaseline } from '../scripts/lib.mjs';
 import { archive, mergeHistory, latestRoutes } from '../scripts/archive.mjs';
 import { build } from '../scripts/build.mjs';
-import { latestForRoute, seriesFor, artifactAvailable, escapeHtml } from '../web/model.mjs';
+import { latestForRoute, seriesFor, artifactAvailable, dataPresentation, escapeHtml } from '../web/model.mjs';
 import { messages } from '../web/i18n.mjs';
 
 const config = JSON.parse(await fs.readFile(new URL('../monitor.config.json', import.meta.url), 'utf8'));
@@ -154,4 +156,29 @@ test('a collector infrastructure failure keeps earlier valid trend points visibl
   const failed = summary({ id: '101-1-production', generatedAt: '2026-11-11T13:17:00.000Z', comparisonKey: null, routes: [route({ status: 'failed' })] });
   assert.equal(seriesFor([prior, failed], 'production', 'landing', 'performance', 0).length, 1);
   assert.equal(latestForRoute([prior, failed], 'production', 'landing').route.status, 'failed');
+});
+
+test('loading, errors and empty data keep the correct message when language changes', () => {
+  for (const locale of ['zh', 'en']) {
+    const failed = dataPresentation({ loading: false, error: true, data: null });
+    assert.equal(messages[locale][failed.key], messages[locale].loadError);
+    assert.equal(failed.retry, true);
+    assert.equal(messages[locale][dataPresentation({ loading: false, error: false, data: { summaries: [] } }).key], messages[locale].empty);
+  }
+  assert.equal(dataPresentation({ loading: true, error: false, data: { summaries: [summary()] } }).hidden, false);
+  assert.equal(dataPresentation({ loading: false, error: false, data: { summaries: [summary()] } }).hidden, true);
+});
+
+test('first history publication works from a detached worktree to a new remote branch', async t => {
+  const root = await temporary(t), remote = path.join(root, 'remote.git'), working = path.join(root, 'working');
+  const git = (args, cwd = root) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  git(['init', '--bare', remote]); git(['init', working]);
+  git(['config', 'user.name', 'Lighthouse test'], working); git(['config', 'user.email', 'test@example.invalid'], working);
+  git(['commit', '--allow-empty', '-m', 'Initial'], working); git(['checkout', '--detach'], working); git(['remote', 'add', 'origin', remote], working);
+  await fs.mkdir(path.join(working, 'history')); await fs.writeFile(path.join(working, 'history', '100-1-production.json'), JSON.stringify(summary()));
+  assert.equal(saveHistory(working, 'Archive first batch'), true);
+  assert.match(git(['--git-dir', remote, 'show', 'refs/heads/monitor-data:history/100-1-production.json']), /production/);
+  assert.equal(saveHistory(working, 'Idempotent archive'), false);
+  await fs.writeFile(path.join(working, 'history', '101-1-production.json'), JSON.stringify(summary({ id: '101-1-production' })));
+  assert.equal(saveHistory(working, 'Archive second batch'), true);
 });

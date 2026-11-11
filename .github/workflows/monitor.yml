@@ -147,12 +147,7 @@ jobs:
           TARGET_ENVIRONMENTS: ${{ inputs.environment == 'production' && 'production' || inputs.environment == 'staging' && 'staging' || 'production,staging' }}
         run: node scripts/archive.mjs
       - name: Save history without raw report blobs
-        run: |
-          git -C monitor-data add history
-          if ! git -C monitor-data diff --cached --quiet; then
-            git -C monitor-data commit -m "Record Lighthouse batch $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT"
-            git -C monitor-data push origin HEAD:monitor-data
-          fi
+        run: node scripts/history-git.mjs
       - name: Build static dashboard with latest page reports
         env:
           GITHUB_TOKEN: ${{ github.token }}
