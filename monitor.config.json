@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "repository": "LIANGJIANHUI1999/ai-creator-lighthouse",
+  "runs": 3,
+  "retryCount": 1,
+  "reportRetentionDays": 30,
+  "chromeVersion": "157.0.8103.50",
+  "environments": {
+    "production": { "labelKey": "production", "origin": "https://vidma.ai" },
+    "staging": { "labelKey": "staging", "origin": "https://vidmaeditor-ios.web.app" }
+  },
+  "profile": {
+    "id": "desktop-v1",
+    "formFactor": "desktop",
+    "screenEmulation": { "mobile": false, "width": 1350, "height": 940, "deviceScaleFactor": 1, "disabled": false },
+    "throttlingMethod": "simulate",
+    "throttling": { "rttMs": 40, "throughputKbps": 10240, "cpuSlowdownMultiplier": 1, "requestLatencyMs": 0, "downloadThroughputKbps": 0, "uploadThroughputKbps": 0 },
+    "disableStorageReset": false,
+    "maxWaitForLoad": 45000
+  },
+  "routes": [
+    { "id": "landing", "labelKey": "landing", "path": "/zh/" },
+    { "id": "home", "labelKey": "home", "path": "/zh/home/" },
+    { "id": "ai-video", "labelKey": "aiVideo", "path": "/zh/ai-video/" },
+    { "id": "video-create", "labelKey": "videoCreate", "path": "/zh/video-create/?mode=text" },
+    { "id": "image-create", "labelKey": "imageCreate", "path": "/zh/image-create/" },
+    { "id": "tools", "labelKey": "tools", "path": "/zh/tools/" },
+    { "id": "clothes-transfer", "labelKey": "clothesTransfer", "path": "/zh/tools/clothes-transfer/" },
+    { "id": "editor", "labelKey": "editor", "path": "/zh/editor/" }
+  ],
+  "targets": { "performance": 90, "accessibility": 100, "bestPractices": 95, "seo": 95, "lcpMs": 2500, "cls": 0.1, "tbtMs": 200 },
+  "critical": { "performance": 70, "accessibility": 90, "bestPractices": 85, "seo": 85, "lcpMs": 4000, "cls": 0.25, "tbtMs": 600 }
+}

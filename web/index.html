@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>AI Creator · Lighthouse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="./"><span class="brand-mark" aria-hidden="true">↗</span><span>AI Creator <small>Lighthouse</small></span></a>
+    <nav><a href="#history" data-i18n="history"></a><a href="https://github.com/LIANGJIANHUI1999/ai-creator-lighthouse/actions" data-i18n="actions"></a><button id="language" type="button" data-i18n-aria="language">EN</button></nav>
+  </header>
+  <main>
+    <div class="page-heading"><div><h1 data-i18n="title"></h1><p data-i18n="subtitle"></p></div><button id="refresh" type="button" data-i18n="refresh"></button></div>
+    <div id="load-status" role="status" data-i18n="loading"></div>
+    <div id="dashboard" hidden>
+      <div class="environment-bar"><div id="environments" class="segmented" role="group" data-i18n-aria="environmentFilter"></div><div id="freshness" class="meta"></div></div>
+      <div id="notice" role="status"></div>
+      <div class="workspace">
+        <aside class="page-rail"><h2 data-i18n="pages"></h2><div id="routes" role="group" data-i18n-aria="pageFilter"></div><div class="rail-note"><strong data-i18n="measurements"></strong><p data-i18n="profile"></p><p data-i18n="anonymous"></p></div></aside>
+        <div class="workspace-main">
+          <section class="selected-heading"><div><h2 id="selected-page"></h2><a id="site-link" target="_blank" rel="noopener noreferrer" class="meta"></a></div><div id="selected-status"></div></section>
+          <div id="metrics" class="metric-strip"></div>
+          <section class="trend-section" aria-labelledby="trend-title">
+            <div class="section-heading"><h2 id="trend-title" data-i18n="trend"></h2><div id="periods" class="segmented compact" role="group" data-i18n-aria="timeFilter"></div></div>
+            <div id="metric-buttons" class="metric-buttons" role="group" data-i18n-aria="metricFilter"></div>
+            <div id="chart"></div>
+            <div class="chart-caption"><p data-i18n="chartHint"></p><span id="point-count" class="mono"></span></div>
+            <details class="sample-table"><summary data-i18n="showData"></summary><div id="sample-data" class="table-scroll" tabindex="0"></div></details>
+          </section>
+          <section class="report-bar"><div id="report-links"></div><p data-i18n="artifactNote"></p></section>
+          <section class="overview-section" aria-labelledby="overview-title"><div class="section-heading"><h2 id="overview-title" data-i18n="overview"></h2><span class="meta" data-i18n="timeZone"></span></div><div id="overview" class="table-scroll" tabindex="0"></div></section>
+          <section id="history" aria-labelledby="history-title"><div class="section-heading"><h2 id="history-title" data-i18n="history"></h2><span class="meta" data-i18n="versionChanged"></span></div><div id="history-list" class="history-list"></div></section>
+          <details class="evidence"><summary data-i18n="evidence"></summary><dl id="evidence"></dl></details>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer><div><strong data-i18n="schedule"></strong><p data-i18n="scheduleNote"></p></div><p data-i18n="targetNote"></p></footer>
+</body>
+</html>

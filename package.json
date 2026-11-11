@@ -1,0 +1,24 @@
+{
+  "name": "ai-creator-lighthouse",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.19"
+  },
+  "packageManager": "pnpm@11.5.0",
+  "scripts": {
+    "collect": "node scripts/collect.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "i18n:check": "node scripts/check-i18n.mjs",
+    "verify:session": "node scripts/check.mjs && node scripts/check-i18n.mjs"
+  },
+  "dependencies": {
+    "chrome-launcher": "1.2.1",
+    "lighthouse": "13.4.1"
+  },
+  "devDependencies": {
+    "yaml": "2.8.1"
+  }
+}
