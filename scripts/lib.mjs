@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { routesForEnvironment } from '../web/routes.mjs';
 import { lowerIsBetter, metricStatus } from '../web/budgets.mjs';
 
 export const metricKeys = ['performance', 'accessibility', 'bestPractices', 'seo', 'lcpMs', 'cls', 'tbtMs'];
@@ -22,6 +23,7 @@ export function validateConfig(config) {
   for (const route of config.routes) {
     if (!/^[a-z][a-z0-9-]*$/.test(route.id) || ids.has(route.id) || !route.path.startsWith('/') || route.path.startsWith('//')) throw new Error('Invalid or duplicate route');
     if (new URL(route.path, 'https://example.com').origin !== 'https://example.com') throw new Error('Cross-origin route');
+    if (route.environments !== undefined && (!Array.isArray(route.environments) || !route.environments.length || new Set(route.environments).size !== route.environments.length || route.environments.some(environment => !Object.hasOwn(config.environments, environment)))) throw new Error('Invalid route environment scope');
     ids.add(route.id);
   }
   for (const key of metricKeys) {
@@ -37,8 +39,9 @@ export function selectPlan(config, { environment = 'production', routes = '', ru
   runs = Number(runs);
   if (!Number.isInteger(runs) || runs < 1 || runs > 5) throw new Error('Runs must be an integer from 1 to 5');
   const ids = routes.split(',').map(s => s.trim()).filter(Boolean);
-  if (ids.some(id => !config.routes.some(route => route.id === id))) throw new Error('Unknown route');
-  return { environment, origin: config.environments[environment].origin, routes: config.routes.filter(route => !ids.length || ids.includes(route.id)), runs };
+  const available = routesForEnvironment(config, environment);
+  if (ids.some(id => !available.some(route => route.id === id))) throw new Error('Unknown or unavailable route in selected environment');
+  return { environment, origin: config.environments[environment].origin, routes: available.filter(route => !ids.length || ids.includes(route.id)), runs };
 }
 
 export function routeStatus(route, config) {

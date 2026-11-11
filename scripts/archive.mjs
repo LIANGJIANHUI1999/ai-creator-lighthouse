@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import { routesForEnvironment } from '../web/routes.mjs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { comparableBaseline, regression, validateConfig } from './lib.mjs';
@@ -49,7 +50,7 @@ export async function archive({ config, dataDirectory, incomingDirectory, artifa
         schemaVersion: 1, id: `${runId}-${runAttempt}-${environment}`, environment, origin: config.environments[environment].origin,
         generatedAt: now.toISOString(), finishedAt: now.toISOString(), comparisonKey: null, versions: {}, runsPerRoute: config.runs,
         profile: config.profile, targets: config.targets, critical: config.critical, siteSnapshot: { sourceRevision: null },
-        routes: config.routes.map(route => ({ ...route, metrics: {}, ranges: {}, successCount: 0, expectedCount: config.runs, status: 'failed', representative: null, errors: [{ message: 'Collector did not produce a summary' }], samples: [] })),
+        routes: routesForEnvironment(config, environment).map(route => ({ ...route, metrics: {}, ranges: {}, successCount: 0, expectedCount: config.runs, status: 'failed', representative: null, errors: [{ message: 'Collector did not produce a summary' }], samples: [] })),
       };
     }
     if (summary.environment !== environment || summary.id !== `${runId}-${runAttempt}-${environment}`) throw new Error('Mismatched batch identity');

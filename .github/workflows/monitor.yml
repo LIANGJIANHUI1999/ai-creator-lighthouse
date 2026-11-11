@@ -16,7 +16,7 @@ on:
         options: [all, production, staging]
         default: all
       routes:
-        description: Comma-separated route IDs; empty measures all 8 pages
+        description: Comma-separated route IDs; empty measures all pages available in the selected environment
         type: string
         default: ''
       runs:

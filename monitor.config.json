@@ -26,7 +26,8 @@
     { "id": "image-create", "labelKey": "imageCreate", "path": "/zh/image-create/" },
     { "id": "tools", "labelKey": "tools", "path": "/zh/tools/" },
     { "id": "clothes-transfer", "labelKey": "clothesTransfer", "path": "/zh/tools/clothes-transfer/" },
-    { "id": "editor", "labelKey": "editor", "path": "/zh/editor/" }
+    { "id": "editor", "labelKey": "editor", "path": "/zh/editor/" },
+    { "id": "ai-ads-en", "labelKey": "aiAdsEn", "path": "/en/ai-ads/", "environments": ["staging"] }
   ],
   "targets": { "performance": 90, "accessibility": 100, "bestPractices": 95, "seo": 95, "lcpMs": 2500, "cls": 0.1, "tbtMs": 200 },
   "critical": { "performance": 70, "accessibility": 90, "bestPractices": 85, "seo": 85, "lcpMs": 4000, "cls": 0.25, "tbtMs": 600 }

@@ -1,7 +1,7 @@
 export const messages = {
   zh: {
     title: '页面性能监控', subtitle: '正式环境与测试环境的 Lighthouse 采集记录', production: '正式环境', staging: '测试环境',
-    pages: '监测页面', landing: '官网首页', home: '工作台', aiVideo: '短剧创作', videoCreate: '视频创作', imageCreate: '图片创作', tools: '工具中心', clothesTransfer: 'AI 换装', editor: '编辑器',
+    pages: '监测页面', landing: '官网首页', home: '工作台', aiVideo: '短剧创作', videoCreate: '视频创作', imageCreate: '图片创作', tools: '工具中心', clothesTransfer: 'AI 换装', editor: '编辑器', aiAdsEn: 'AI 广告（英文）',
     performance: '性能', accessibility: '无障碍', bestPractices: '最佳实践', seo: 'SEO', lcpMs: 'LCP', cls: 'CLS', tbtMs: 'TBT', fcpMs: 'FCP',
     pass: '达标', warning: '待优化', critical: '严重未达标', failed: '采集不完整', unknown: '尚未采集',
     history: '采集历史', actions: 'Actions', source: '源码', lastUpdated: '最近采集', schedule: '每天 09:17、21:17（北京时间）', scheduleNote: 'GitHub 调度可能延迟；每页 3 次，取指标中位数。',
@@ -20,7 +20,7 @@ export const messages = {
   },
   en: {
     title: 'Page performance', subtitle: 'Lighthouse measurements for production and staging', production: 'Production', staging: 'Staging',
-    pages: 'Monitored pages', landing: 'Landing page', home: 'Workspace', aiVideo: 'Short drama', videoCreate: 'Video creation', imageCreate: 'Image creation', tools: 'Tool directory', clothesTransfer: 'Clothes transfer', editor: 'Editor',
+    pages: 'Monitored pages', landing: 'Landing page', home: 'Workspace', aiVideo: 'Short drama', videoCreate: 'Video creation', imageCreate: 'Image creation', tools: 'Tool directory', clothesTransfer: 'Clothes transfer', editor: 'Editor', aiAdsEn: 'AI ads (EN)',
     performance: 'Performance', accessibility: 'Accessibility', bestPractices: 'Best practices', seo: 'SEO', lcpMs: 'LCP', cls: 'CLS', tbtMs: 'TBT', fcpMs: 'FCP',
     pass: 'On target', warning: 'Needs work', critical: 'Critical', failed: 'Incomplete', unknown: 'Not measured',
     history: 'Run history', actions: 'Actions', source: 'Source', lastUpdated: 'Last collected', schedule: 'Daily at 09:17 and 21:17 (Beijing)', scheduleNote: 'GitHub scheduling may be delayed. Three samples per page; metrics show medians.',

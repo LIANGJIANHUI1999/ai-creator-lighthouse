@@ -1,4 +1,5 @@
 import { translate } from './i18n.mjs';
+import { routesForEnvironment } from './routes.mjs';
 import { routeStates, batchStates } from './budgets.mjs';
 import { renderGroupState, renderStatusGroups } from './status.mjs';
 import { latestForRoute, seriesFor, artifactAvailable, dataPresentation, escapeHtml as h } from './model.mjs';
@@ -46,8 +47,9 @@ function render() {
   renderLoadStatus();
   if (!state.data) return;
   const { config, summaries, reports } = state.data;
-  if (!config.routes.some(route => route.id === state.route)) state.route = config.routes[0].id;
-  const selected = config.routes.find(route => route.id === state.route);
+  const visibleRoutes = routesForEnvironment(config, state.environment);
+  if (!visibleRoutes.some(route => route.id === state.route)) state.route = visibleRoutes[0].id;
+  const selected = visibleRoutes.find(route => route.id === state.route);
   const latest = latestForRoute(summaries, state.environment, state.route);
   const envSummaries = summaries.filter(summary => summary.environment === state.environment).toSorted((a, b) => b.generatedAt.localeCompare(a.generatedAt));
   const environment = config.environments[state.environment];
@@ -57,7 +59,7 @@ function render() {
   const stale = envSummaries[0] && Date.now() - Date.parse(envSummaries[0].generatedAt) > 18 * 3600000;
   $('notice').textContent = stale ? t('stale') : latest?.route.status === 'failed' ? t('failedNotice') : '';
   $('notice').hidden = !$('notice').textContent;
-  $('routes').innerHTML = config.routes.map(route => {
+  $('routes').innerHTML = visibleRoutes.map(route => {
     const record = latestForRoute(summaries, state.environment, route.id);
     const states = routeStates(record?.route, record?.summary ?? config);
     return `<button type="button" class="route-button" data-route="${h(route.id)}" aria-pressed="${state.route === route.id}"><span>${h(t(route.labelKey))}</span><span class="route-score ${h(states.performance.status)}">${fmt(record?.route.metrics.performance, 'performance')}</span></button>`;
@@ -78,7 +80,7 @@ function render() {
   const report = reports[state.environment]?.[state.route];
   const pageReports = report && report.summaryId === latest?.summary.id ? `<a class="primary-link" href="${h(report.html)}" target="_blank" rel="noopener">${h(t('viewReport'))} ↗</a><a href="${h(report.json)}" download>${h(t('downloadJson'))}</a>` : `<span class="meta">${h(t('reportUnavailable'))}</span>`;
   $('report-links').innerHTML = pageReports + (latest ? `<a href="history/${h(latest.summary.id)}.json" download>${h(t('downloadSummary'))}</a>` : '') + (artifactAvailable(latest?.summary.artifact) ? external(latest.summary.artifact.url, t('downloadBatch')) : '');
-  $('overview').innerHTML = `<table><thead><tr>${['page', 'performanceStatus', 'qualityStatus', 'performance', 'lcpMs', 'cls', 'tbtMs', 'samples', 'collectedAt'].map(key => `<th>${h(t(key))}${key.endsWith('Ms') ? ' (ms)' : ''}</th>`).join('')}</tr></thead><tbody>${config.routes.map(route => {
+  $('overview').innerHTML = `<table><thead><tr>${['page', 'performanceStatus', 'qualityStatus', 'performance', 'lcpMs', 'cls', 'tbtMs', 'samples', 'collectedAt'].map(key => `<th>${h(t(key))}${key.endsWith('Ms') ? ' (ms)' : ''}</th>`).join('')}</tr></thead><tbody>${visibleRoutes.map(route => {
     const record = latestForRoute(summaries, state.environment, route.id);
     const states = routeStates(record?.route, record?.summary ?? config);
     return `<tr><th><button type="button" class="text-button" data-route="${h(route.id)}">${h(t(route.labelKey))}</button>${record?.route.regressions?.length ? `<small class="regression">${h(t('regressions'))}</small>` : ''}</th>${['performance', 'quality'].map(group => `<td class="status-cell">${renderGroupState(states[group], group, state.locale, { label: false })}</td>`).join('')}${metricNames.map(key => `<td class="mono">${fmt(record?.route.metrics[key], key)}</td>`).join('')}<td class="mono">${record ? `${record.route.successCount}/${record.route.expectedCount}` : '—'}</td><td class="meta nowrap">${h(date(record?.summary.generatedAt))}</td></tr>`;

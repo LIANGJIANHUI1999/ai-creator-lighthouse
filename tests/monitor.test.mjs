@@ -105,7 +105,7 @@ test('archive appends new batches, exposes download metadata and preserves the o
 test('missing collector output becomes a visible failed batch, not a stale success', async t => {
   const root = await temporary(t);
   const result = await archive({ config, dataDirectory: path.join(root, 'data'), incomingDirectory: path.join(root, 'missing'), artifactList: [], runId: '100', runAttempt: '1', environments: ['staging'] });
-  assert.equal(result.incoming[0].routes.length, 8); assert.equal(result.incoming[0].routes.every(item => item.status === 'failed'), true); assert.equal(result.incoming[0].artifact, null);
+  assert.equal(result.incoming[0].routes.length, 9); assert.equal(result.incoming[0].routes.every(item => item.status === 'failed'), true); assert.equal(result.incoming[0].artifact, null);
 });
 test('dashboard build includes durable summaries and real downloadable page reports', async t => {
   const root = await temporary(t), source = path.join(root, 'sample'), output = path.join(root, 'dist');
@@ -197,4 +197,29 @@ test('quality status includes the other Lighthouse categories even with a high p
   const result = summarizeRoute(config.routes[0], [{ metrics: { ...metrics, performance: 99, bestPractices: 50 }, report: 'sample' }], [], 1, config);
   assert.equal(result.metrics.performance, 99);
   assert.equal(result.status, 'critical');
+});
+
+test('English AI ads is included in scheduled staging collection and keeps the exact supplied URL', () => {
+  const all = selectPlan(config, { environment: 'staging' });
+  const selected = selectPlan(config, { environment: 'staging', routes: 'ai-ads-en' });
+  assert.equal(all.routes.length, 9);
+  assert.equal(selected.routes.length, 1);
+  assert.equal(new URL(selected.routes[0].path, selected.origin).href, 'https://vidmaeditor-ios.web.app/en/ai-ads/');
+  assert.equal(messages.zh[selected.routes[0].labelKey], 'AI 广告（英文）');
+  assert.equal(selectPlan(config, { environment: 'production' }).routes.length, 8);
+  assert.throws(() => selectPlan(config, { environment: 'production', routes: 'ai-ads-en' }), /unavailable/);
+});
+
+test('route environment scopes reject unknown, empty and duplicate environments', () => {
+  for (const scope of [[], ['unknown'], ['staging', 'staging'], 'staging']) {
+    const invalid = structuredClone(config); invalid.routes.at(-1).environments = scope;
+    assert.throws(() => validateConfig(invalid), /scope/);
+  }
+});
+
+test('production collector failure summaries exclude staging-only pages', async t => {
+  const root = await temporary(t);
+  const result = await archive({ config, dataDirectory: path.join(root, 'data'), incomingDirectory: path.join(root, 'missing'), artifactList: [], runId: '100', runAttempt: '1', environments: ['production'] });
+  assert.equal(result.incoming[0].routes.length, 8);
+  assert.equal(result.incoming[0].routes.some(route => route.id === 'ai-ads-en'), false);
 });

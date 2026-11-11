@@ -13,7 +13,7 @@
 | 正式环境 `production` | https://vidma.ai |
 | 测试环境 `staging` | https://vidmaeditor-ios.web.app |
 
-默认测量中文官网首页、工作台、短剧创作、视频创作、图片创作、工具中心、AI 换装、编辑器，共 8 个页面。配置集中在 `monitor.config.json`，源自业务项目原有 Lighthouse 桌面端配置。
+默认测量中文官网首页、工作台、短剧创作、视频创作、图片创作、工具中心、AI 换装、编辑器，共 8 个公共页面。测试环境额外覆盖英文广告创作页 `/en/ai-ads/`（看板名称“AI 广告（英文）”，ID `ai-ads-en`），因此正式环境测 8 页，测试环境测 9 页。配置集中在 `monitor.config.json`，源自业务项目原有 Lighthouse 桌面端配置。
 
 - 北京时间每天 **09:17、21:17** 采集两个环境；cron 使用 UTC `17 1,13 * * *`。
 - 每页 **3 次**独立匿名导航，清理浏览器缓存与站点存储；每个指标分别取中位数，并保留最小/最大值。
@@ -32,7 +32,9 @@ GitHub schedule 只从默认分支触发，可能延迟或丢弃高负载时的�
 2. `routes`：留空测全部；也可填写 `landing,home` 等页面 ID。
 3. `runs`：默认 `3`；支持 `1`、`5`。
 
-页面 ID：`landing`、`home`、`ai-video`、`video-create`、`image-create`、`tools`、`clothes-transfer`、`editor`。
+页面 ID：`landing`、`home`、`ai-video`、`video-create`、`image-create`、`tools`、`clothes-transfer`、`editor`，以及仅测试环境可用的 `ai-ads-en`。
+
+英文广告页可选择 `environment=staging`、`routes=ai-ads-en`、`runs=3` 单独采集。路由的可选 `environments` 配置用于限制采集与看板展示范围；手动选择不适用的环境会在采集前明确拒绝。
 
 推送到 `main` 会执行检查并用既有记录刷新看板，避免修改看板时重复测量线上页面。定时任务与手动运行执行实际采集；PR 仅执行代码质量检查与测试，不采集、不写历史、不部署。
 
