@@ -12,6 +12,7 @@ export const median = values => {
 };
 
 export function validateConfig(config) {
+  if (config.profile?.formFactor !== 'desktop' || config.profile.emulatedUserAgent !== false || config.profile.screenEmulation?.mobile !== false) throw new Error('Expected a desktop viewport and native desktop user agent');
   if (config.schemaVersion !== 1 || !Array.isArray(config.routes) || !config.routes.length) throw new Error('Invalid monitoring configuration');
   if (!Number.isInteger(config.retryCount) || config.retryCount < 0 || config.retryCount > 2) throw new Error('Invalid retry budget');
   if (!/^[\w-]+\/[\w.-]+$/.test(config.repository)) throw new Error('Invalid repository');

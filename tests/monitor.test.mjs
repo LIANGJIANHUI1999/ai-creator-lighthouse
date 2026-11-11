@@ -11,6 +11,7 @@ import { archive, mergeHistory, latestRoutes } from '../scripts/archive.mjs';
 import { build } from '../scripts/build.mjs';
 import { latestForRoute, seriesFor, artifactAvailable, dataPresentation, escapeHtml } from '../web/model.mjs';
 import { messages } from '../web/i18n.mjs';
+import { resolveSettings } from 'lighthouse/core/config/config-helpers.js';
 
 const config = JSON.parse(await fs.readFile(new URL('../monitor.config.json', import.meta.url), 'utf8'));
 const metrics = { performance: 92, accessibility: 100, bestPractices: 100, seo: 100, lcpMs: 1200, cls: 0, tbtMs: 0, fcpMs: 500 };
@@ -28,6 +29,20 @@ test('configuration selects both public deployment targets and preserves route p
   assert.equal(selectPlan(config, { environment: 'staging' }).origin, 'https://vidmaeditor-ios.web.app');
   assert.equal(selectPlan(config, { routes: 'video-create,landing' }).routes[1].path, '/zh/video-create/?mode=text');
   assert.equal(selectPlan(config).routes.length, 8);
+});
+test('desktop settings override Lighthouse mobile UA defaults and reject incomplete profiles', () => {
+  const { id, ...flags } = config.profile;
+  const settings = resolveSettings({}, flags);
+  assert.equal(settings.formFactor, 'desktop');
+  assert.equal(settings.screenEmulation.mobile, false);
+  assert.equal(settings.emulatedUserAgent, false);
+  const legacy = structuredClone(config);
+  delete legacy.profile.emulatedUserAgent;
+  assert.match(resolveSettings({}, legacy.profile).emulatedUserAgent, /Mobile/);
+  assert.throws(() => validateConfig(legacy), /desktop user agent/);
+  const mismatched = structuredClone(config);
+  mismatched.profile.screenEmulation.mobile = true;
+  assert.throws(() => validateConfig(mismatched), /desktop viewport/);
 });
 test('invalid environments, routes and repeat counts are rejected before launch', () => {
   for (const options of [{ environment: 'other' }, { routes: 'landing,other' }, { runs: 0 }, { runs: 6 }, { runs: 1.5 }, { runs: 'abc' }]) assert.throws(() => selectPlan(config, options));

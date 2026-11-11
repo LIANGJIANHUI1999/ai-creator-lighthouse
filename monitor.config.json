@@ -10,8 +10,9 @@
     "staging": { "labelKey": "staging", "origin": "https://vidmaeditor-ios.web.app" }
   },
   "profile": {
-    "id": "desktop-v1",
+    "id": "desktop-v2-native-ua",
     "formFactor": "desktop",
+    "emulatedUserAgent": false,
     "screenEmulation": { "mobile": false, "width": 1350, "height": 940, "deviceScaleFactor": 1, "disabled": false },
     "throttlingMethod": "simulate",
     "throttling": { "rttMs": 40, "throughputKbps": 10240, "cpuSlowdownMultiplier": 1, "requestLatencyMs": 0, "downloadThroughputKbps": 0, "uploadThroughputKbps": 0 },
