@@ -62,7 +62,9 @@ main, footer { width: min(100% - 64px, 2240px); margin: 0 auto; }
 .rail-note strong { font-size: 12px; font-weight: 500; }
 .rail-note p { margin-top: 8px; line-height: 1.7; }
 .workspace-main { min-width: 0; }
-.selected-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.selected-heading { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.selected-heading > div:first-child { flex: 1 1 220px; min-width: 0; }
+#selected-status { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; flex: 1 1 460px; max-width: 760px; min-width: 0; }
 .selected-heading h2 { font-size: 23px; }
 #site-link { display: block; margin-top: 4px; overflow-wrap: anywhere; }
 .status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; }
@@ -125,6 +127,20 @@ td { font-size: 12px; }
 footer { display: flex; justify-content: space-between; gap: 32px; border-top: 1px solid var(--color-rule); margin-top: 48px; padding: 24px 0 40px; font-size: 11px; color: var(--color-muted); }
 footer strong { font-size: 11px; font-weight: 500; }
 footer > p { max-width: 60ch; margin: 0; }
+/* Both groups share the existing status palette; reasons stay visible in page and table views. */
+.status-scope { max-width: 85ch; margin-top: 16px; }
+.status-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.status-label { color: var(--color-muted); font-size: 12px; }
+.group-status { min-width: 0; }
+.status-reasons { list-style: none; padding: 0; margin: 8px 0 0; font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
+.status-issue + .status-issue { margin-top: 4px; }
+.status-issue.warning { color: var(--color-warning); }
+.status-issue.critical, .status-issue.failed { color: var(--color-critical); }
+.status-issue strong { color: inherit; font-weight: 500; }
+.status-cell { min-width: 180px; max-width: 280px; vertical-align: top; }
+.status-details { margin-top: 4px; }
+.history-row { grid-template-columns: minmax(150px, .8fr) minmax(240px, 1.4fr) minmax(0, 1.4fr); }
+.history-row .group-status + .group-status { margin-top: 8px; }
 @media (min-width: 1920px) { .workspace { grid-template-columns: 256px minmax(0, 1fr); gap: 48px; } .metric-strip { padding: 24px 0; } }
 @media (max-width: 1100px) { .workspace { grid-template-columns: 180px minmax(0, 1fr); gap: 24px; } .metric { padding: 0 12px; } .history-row { grid-template-columns: minmax(140px, 1fr) minmax(0, 1fr); } .history-actions { grid-column: 1 / -1; } .section-heading > .meta { max-width: 40ch; text-align: right; } }
 @media (max-width: 767px) {
@@ -149,6 +165,7 @@ footer > p { max-width: 60ch; margin: 0; }
   .workspace-main { width: 100%; }
   .selected-heading { align-items: start; }
   .selected-heading h2 { font-size: 21px; }
+  #selected-status { max-width: none; flex-basis: 100%; }
   .metric-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 0; padding: 20px 0; margin-top: 24px; }
   .metric:nth-child(3) { border-left: 0; padding-left: 0; }
   .metric strong { font-size: 27px; }
@@ -170,3 +187,5 @@ footer > p { max-width: 60ch; margin: 0; }
 .category-strip > span { display: flex; gap: 8px; align-items: baseline; }
 .category-strip strong { font-family: var(--font-mono); font-weight: 500; }
 .category-strip small { font-size: 10px; }
+
+@media (max-width: 413px) { #selected-status { grid-template-columns: minmax(0, 1fr); gap: 16px; } }

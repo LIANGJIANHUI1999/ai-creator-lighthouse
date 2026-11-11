@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
+import { lowerIsBetter, metricStatus } from '../web/budgets.mjs';
 
 export const metricKeys = ['performance', 'accessibility', 'bestPractices', 'seo', 'lcpMs', 'cls', 'tbtMs'];
-export const lowerIsBetter = new Set(['lcpMs', 'cls', 'tbtMs']);
+export { lowerIsBetter, metricStatus };
 export const hash = value => createHash('sha256').update(typeof value === 'string' ? value : JSON.stringify(value)).digest('hex');
 export const median = values => {
   const sorted = values.filter(Number.isFinite).toSorted((a, b) => a - b);
@@ -38,12 +39,6 @@ export function selectPlan(config, { environment = 'production', routes = '', ru
   const ids = routes.split(',').map(s => s.trim()).filter(Boolean);
   if (ids.some(id => !config.routes.some(route => route.id === id))) throw new Error('Unknown route');
   return { environment, origin: config.environments[environment].origin, routes: config.routes.filter(route => !ids.length || ids.includes(route.id)), runs };
-}
-
-export function metricStatus(key, value, config) {
-  if (!Number.isFinite(value)) return 'failed';
-  if (lowerIsBetter.has(key)) return value > config.critical[key] ? 'critical' : value > config.targets[key] ? 'warning' : 'pass';
-  return value < config.critical[key] ? 'critical' : value < config.targets[key] ? 'warning' : 'pass';
 }
 
 export function routeStatus(route, config) {

@@ -1,3 +1,5 @@
+import { routeStates } from './budgets.mjs';
+
 export function latestForRoute(summaries, environment, routeId) {
   const summary = summaries.filter(item => item.environment === environment && item.routes.some(route => route.id === routeId)).toSorted((a, b) => b.generatedAt.localeCompare(a.generatedAt))[0];
   return summary ? { summary, route: summary.routes.find(route => route.id === routeId) } : null;
@@ -9,7 +11,7 @@ export function seriesFor(summaries, environment, routeId, metric, days, now = D
   return summaries.filter(summary => summary.environment === environment && summary.comparisonKey === comparisonKey && summary.runsPerRoute === latest.summary.runsPerRoute && (!days || now - Date.parse(summary.generatedAt) <= days * 86400000))
     .flatMap(summary => {
       const route = summary.routes.find(item => item.id === routeId);
-      return route && route.status !== 'failed' && Number.isFinite(route.metrics[metric]) ? [{ id: summary.id, date: summary.generatedAt, value: route.metrics[metric], status: route.status }] : [];
+      return route && route.status !== 'failed' && Number.isFinite(route.metrics[metric]) ? [{ id: summary.id, date: summary.generatedAt, value: route.metrics[metric], states: routeStates(route, summary) }] : [];
     }).toSorted((a, b) => a.date.localeCompare(b.date));
 }
 export function artifactAvailable(artifact, now = Date.now()) {
