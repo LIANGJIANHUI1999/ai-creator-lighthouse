@@ -1,5 +1,9 @@
 export const messages = {
   zh: {
+    pageLighthouse: '页面 Lighthouse', editorView: '编辑器实操', benchmarkView: '监测类型', editorBenchmark: '编辑器实操基准', editorMetric: '操作指标', editorMedian: '中位数', countUnit: '个',
+    editorReadyMs: '编辑器就绪', previewReadyMs: '导入至首帧', filmstripReadyMs: '缩略图就绪', playResponseMs: '播放首帧响应', seekResponseMs: '定位帧响应', trimResponseMs: '裁切响应', droppedFrameRatio: '播放掉帧率', longTaskCount: '长任务数', exportRtf: '导出 RTF',
+    editorScope: '固定 5 秒 · 640×360 · 30fps 素材；导入、播放、定位、裁切、导出各阶段独立计时。', editorLabNote: 'GitHub Linux 软件渲染实验室基准；各指标独立判断，不计入 Lighthouse 百分制评分。掉帧率取自视频解码帧计数。', editorRtfNote: 'RTF = 导出总耗时 ÷ 裁切后的成片时长，越低越好；包含导出代码加载。', editorCompareNote: '仅连接相同素材、浏览器、CPU、渲染器、导出引擎、场景版本和重复次数的完整指标样本。',
+    editorEmpty: '编辑器实操基准尚无采集记录。可在 Actions 选择 suite=editor 手动运行。', editorAllMetrics: '全部操作指标', editorEngine: '导出引擎', editorRenderer: '渲染器', editorCpu: 'CPU 与核心数', editorFixture: '固定测试素材', editorRuns: '逐次测量', editorFailures: '未完成的测量阶段',
     title: '页面性能监控', subtitle: '正式环境与测试环境的 Lighthouse 采集记录', production: '正式环境', staging: '测试环境',
     pages: '监测页面', landing: '官网首页', home: '工作台', aiVideo: '短剧创作', videoCreate: '视频创作', imageCreate: '图片创作', tools: '工具中心', clothesTransfer: 'AI 换装', editor: '编辑器', aiAdsEn: 'AI 广告（英文）',
     performance: '性能', accessibility: '无障碍', bestPractices: '最佳实践', seo: 'SEO', lcpMs: 'LCP', cls: 'CLS', tbtMs: 'TBT', fcpMs: 'FCP',
@@ -19,6 +23,10 @@ export const messages = {
     language: '切换语言', refresh: '刷新记录', sampleRange: '本批波动范围', runLink: '查看运行', versionChanged: '口径变更会开启新的对比序列。',
   },
   en: {
+    pageLighthouse: 'Page Lighthouse', editorView: 'Editor benchmark', benchmarkView: 'Measurement type', editorBenchmark: 'Editor workflow benchmark', editorMetric: 'Operation metric', editorMedian: 'Median', countUnit: 'count',
+    editorReadyMs: 'Editor ready', previewReadyMs: 'Import to first frame', filmstripReadyMs: 'Filmstrip ready', playResponseMs: 'Play to first frame', seekResponseMs: 'Seek frame response', trimResponseMs: 'Trim response', droppedFrameRatio: 'Playback dropped frames', longTaskCount: 'Long tasks', exportRtf: 'Export RTF',
+    editorScope: 'Fixed 5-second, 640×360, 30fps fixture. Import, playback, seeking, trimming and export are timed separately.', editorLabNote: 'Software-rendered Linux lab benchmark on GitHub. Metrics are assessed independently and do not contribute to the Lighthouse score. Dropped frames use video decoder counters.', editorRtfNote: 'RTF = total export time ÷ edited video duration. Lower is better; export code loading is included.', editorCompareNote: 'Only complete metric samples with matching fixture, browser, CPU, renderer, export engine, scenario version and repeat count are connected.',
+    editorEmpty: 'No editor workflow measurements yet. Run Actions manually with suite=editor.', editorAllMetrics: 'All operation metrics', editorEngine: 'Export engine', editorRenderer: 'Renderer', editorCpu: 'CPU and cores', editorFixture: 'Fixed test fixture', editorRuns: 'Individual runs', editorFailures: 'Incomplete measurement stages',
     title: 'Page performance', subtitle: 'Lighthouse measurements for production and staging', production: 'Production', staging: 'Staging',
     pages: 'Monitored pages', landing: 'Landing page', home: 'Workspace', aiVideo: 'Short drama', videoCreate: 'Video creation', imageCreate: 'Image creation', tools: 'Tool directory', clothesTransfer: 'Clothes transfer', editor: 'Editor', aiAdsEn: 'AI ads (EN)',
     performance: 'Performance', accessibility: 'Accessibility', bestPractices: 'Best practices', seo: 'SEO', lcpMs: 'LCP', cls: 'CLS', tbtMs: 'TBT', fcpMs: 'FCP',

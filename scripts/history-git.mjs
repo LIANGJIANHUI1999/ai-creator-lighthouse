@@ -5,8 +5,9 @@ import { pathToFileURL } from 'node:url';
 
 export function saveHistory(directory, message) {
   const git = args => execFileSync('git', ['-C', directory, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-  if (!existsSync(path.join(directory, 'history'))) return false;
-  git(['add', 'history']);
+  const paths = ['history', 'editor-history'].filter(folder=>existsSync(path.join(directory,folder)));
+  if (!paths.length) return false;
+  git(['add', ...paths]);
   const diff = spawnSync('git', ['-C', directory, 'diff', '--cached', '--quiet']);
   if (diff.status === 0) return false;
   if (diff.status !== 1) throw new Error('Could not inspect staged history');

@@ -12,11 +12,13 @@
     "build": "node scripts/build.mjs",
     "test": "node --test tests/*.test.mjs",
     "i18n:check": "node scripts/check-i18n.mjs",
-    "verify:session": "node scripts/check.mjs && node scripts/check-i18n.mjs"
+    "verify:session": "node scripts/check.mjs && node scripts/check-i18n.mjs",
+    "collect:editor": "node scripts/editor-collect.mjs"
   },
   "dependencies": {
     "chrome-launcher": "1.2.1",
-    "lighthouse": "13.4.1"
+    "lighthouse": "13.4.1",
+    "puppeteer-core": "25.16.0"
   },
   "devDependencies": {
     "yaml": "2.8.1"

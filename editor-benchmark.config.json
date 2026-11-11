@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "path": "/zh/editor/?benchmark=1",
+  "scenarioVersion": "editor-workflow-v1",
+  "fixture": { "file": "fixtures/editor-5s.mp4", "sha256": "394c7333109c4a35d302588d6d3aac0b95c6ffd351c29e2042b7a62f65411662", "durationMs": 5000, "width": 640, "height": 360, "fps": 30 },
+  "playbackSampleMs": 2000,
+  "exportTrimRatio": 0.7,
+  "targets": { "editorReadyMs": 2000, "previewReadyMs": 1500, "filmstripReadyMs": 3000, "playResponseMs": 100, "seekResponseMs": 200, "trimResponseMs": 150, "droppedFrameRatio": 0.01, "longTaskCount": 2, "exportRtf": 1 },
+  "critical": { "editorReadyMs": 4000, "previewReadyMs": 4000, "filmstripReadyMs": 8000, "playResponseMs": 300, "seekResponseMs": 600, "trimResponseMs": 500, "droppedFrameRatio": 0.05, "longTaskCount": 8, "exportRtf": 2 }
+}

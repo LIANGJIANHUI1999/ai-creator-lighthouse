@@ -1,11 +1,12 @@
 import { translate } from './i18n.mjs';
+import { renderEditorDashboard } from './editor-view.mjs';
 import { routesForEnvironment } from './routes.mjs';
 import { routeStates, batchStates } from './budgets.mjs';
 import { renderGroupState, renderStatusGroups } from './status.mjs';
 import { latestForRoute, seriesFor, artifactAvailable, dataPresentation, escapeHtml as h } from './model.mjs';
 const $ = id => document.getElementById(id);
 const query = new URLSearchParams(location.search);
-const state = { locale: query.get('lang') === 'en' ? 'en' : 'zh', environment: query.get('env') === 'staging' ? 'staging' : 'production', route: query.get('page') ?? 'landing', metric: 'performance', days: 30, loading: true, error: false, data: null };
+const state = { view: query.get('view') === 'editor' ? 'editor' : 'lighthouse', editorMetric: 'previewReadyMs', locale: query.get('lang') === 'en' ? 'en' : 'zh', environment: query.get('env') === 'staging' ? 'staging' : 'production', route: query.get('page') ?? 'landing', metric: 'performance', days: 30, loading: true, error: false, data: null };
 const t = key => translate(state.locale, key);
 const fmt = (value, key) => Number.isFinite(value) ? new Intl.NumberFormat(state.locale, { maximumFractionDigits: key === 'cls' ? 3 : 0 }).format(value) : '—';
 const date = value => value ? new Intl.DateTimeFormat(state.locale === 'zh' ? 'zh-CN' : 'en-GB', { timeZone: 'Asia/Shanghai', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value)) : '—';
@@ -47,6 +48,13 @@ function render() {
   renderLoadStatus();
   if (!state.data) return;
   const { config, summaries, reports } = state.data;
+  const editorHistory = state.data.editorSummaries ?? [];
+  const editorView = state.view === 'editor';
+  $('benchmark-views').innerHTML = [['lighthouse','pageLighthouse'],['editor','editorView']].map(([value,key])=>button(value,t(key),state.view===value,'data-view')).join('');
+  $('lighthouse-view').hidden = editorView;
+  $('editor-view').hidden = !editorView;
+  $('history-nav').href = editorView ? '#editor-history' : '#history';
+  if (editorView) $('editor-view').innerHTML = renderEditorDashboard({ history:editorHistory, environment:state.environment, locale:state.locale, metric:state.editorMetric, days:state.days });
   const visibleRoutes = routesForEnvironment(config, state.environment);
   if (!visibleRoutes.some(route => route.id === state.route)) state.route = visibleRoutes[0].id;
   const selected = visibleRoutes.find(route => route.id === state.route);
@@ -55,7 +63,8 @@ function render() {
   const environment = config.environments[state.environment];
   const budgets = latest?.summary ?? config;
   $('environments').innerHTML = Object.keys(config.environments).map(id => button(id, t(id), state.environment === id, 'data-env')).join('');
-  $('freshness').textContent = `${t('lastUpdated')} ${date(envSummaries[0]?.generatedAt)}`;
+  const latestEditor = editorHistory.filter(item=>item.environment===state.environment).toSorted((a,b)=>b.generatedAt.localeCompare(a.generatedAt))[0];
+  $('freshness').textContent = `${t('lastUpdated')} ${date(editorView ? latestEditor?.generatedAt : envSummaries[0]?.generatedAt)}`;
   const stale = envSummaries[0] && Date.now() - Date.parse(envSummaries[0].generatedAt) > 18 * 3600000;
   $('notice').textContent = stale ? t('stale') : latest?.route.status === 'failed' ? t('failedNotice') : '';
   $('notice').hidden = !$('notice').textContent;
@@ -89,7 +98,7 @@ function render() {
   $('history-list').innerHTML = recent.map(summary => `<article class="history-row"><div><strong>${h(date(summary.generatedAt))}</strong><span class="meta mono">${h(summary.id)}</span></div><div>${renderStatusGroups(batchStates(summary), state.locale, { collapse: true })}<span class="meta">${h(t('coverage'))} ${summary.routes.filter(route => route.status !== 'failed').length}/${summary.routes.length}</span></div><div class="history-actions"><a href="history/${h(summary.id)}.json" download>${h(t('downloadSummary'))}</a>${artifactAvailable(summary.artifact) ? external(summary.artifact.url, t('downloadBatch')) : `<span class="meta">${h(t('reportExpired'))}</span>`}${external(summary.workflowUrl, t('runLink'))}</div></article>`).join('') || `<p class="meta">${h(t('noPoints'))}</p>`;
   const evidence = latest ? [[t('collectedAt'), `${date(latest.summary.generatedAt)} · ${t('timeZone')}`], [t('samples'), `${latest.route.successCount}/${latest.route.expectedCount}`], [t('toolVersion'), `Lighthouse ${latest.summary.versions?.lighthouse ?? '—'} · ${latest.summary.versions?.chrome ?? '—'}`], [t('collectorVersion'), latest.summary.collectorSha ?? '—'], [t('siteFingerprint'), latest.summary.siteSnapshot?.htmlSha256 ?? '—'], [t('siteRevision'), latest.summary.siteSnapshot?.sourceRevision ?? t('notPublished')], [t('sampleRange'), latest.route.ranges?.[state.metric] ? `${fmt(latest.route.ranges[state.metric].min, state.metric)} – ${fmt(latest.route.ranges[state.metric].max, state.metric)} ${units(state.metric)}` : '—']] : [];
   $('evidence').innerHTML = evidence.map(([key, value]) => `<div><dt>${h(key)}</dt><dd>${h(value)}</dd></div>`).join('');
-  history.replaceState(null, '', `?env=${state.environment}&page=${state.route}&lang=${state.locale}${location.hash}`);
+  history.replaceState(null, '', `?env=${state.environment}&page=${state.route}&lang=${state.locale}&view=${state.view}${location.hash}`);
 }
 
 async function load() {
@@ -104,7 +113,7 @@ async function load() {
     const data = await response.json();
     if (data.schemaVersion !== 1 || !Array.isArray(data.summaries)) throw new Error('Invalid data');
     state.data = data;
-    $('dashboard').hidden = !data.summaries.length;
+    $('dashboard').hidden = !data.summaries.length && !data.editorSummaries?.length;
     state.loading = false;
     render();
   } catch {
@@ -119,6 +128,8 @@ document.addEventListener('click', event => {
   if (!target) return;
   if (target.id === 'refresh' || target.id === 'retry') { load(); return; }
   if (target.id === 'language') state.locale = state.locale === 'zh' ? 'en' : 'zh';
+  if (target.dataset.view) state.view = target.dataset.view;
+  if (target.dataset.editorMetric) state.editorMetric = target.dataset.editorMetric;
   if (target.dataset.env) state.environment = target.dataset.env;
   if (target.dataset.route) state.route = target.dataset.route;
   if (target.dataset.metric) state.metric = target.dataset.metric;

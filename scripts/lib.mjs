@@ -4,7 +4,7 @@ import { lowerIsBetter, metricStatus } from '../web/budgets.mjs';
 
 export const metricKeys = ['performance', 'accessibility', 'bestPractices', 'seo', 'lcpMs', 'cls', 'tbtMs'];
 export { lowerIsBetter, metricStatus };
-export const hash = value => createHash('sha256').update(typeof value === 'string' ? value : JSON.stringify(value)).digest('hex');
+export const hash = value => createHash('sha256').update(typeof value === 'string' || ArrayBuffer.isView(value) ? value : JSON.stringify(value)).digest('hex');
 export const median = values => {
   const sorted = values.filter(Number.isFinite).toSorted((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
@@ -122,6 +122,9 @@ export async function runCollection({ config, plan, audit, saveReport, metadata,
   return { schemaVersion: 1, ...metadata, environment: plan.environment, origin: plan.origin, profile: config.profile, runsPerRoute: plan.runs, targets: config.targets, critical: config.critical, routes };
 }
 
-export function pipelineHealthy(health, { event, collection, publish, deploy }) {
-  return health.failed === 0 && (collection === 'success' || event === 'push' && collection === 'skipped') && publish === 'success' && deploy === 'success';
+export function pipelineHealthy(health, { event, collection, editorCollection, suite = 'lighthouse', publish, deploy }) {
+  const lighthouseExpected = event !== 'push' && suite !== 'editor';
+  const editorExpected = event === 'schedule' || event === 'workflow_dispatch' && suite !== 'lighthouse';
+  const completed = (result, expected) => expected ? result === 'success' : result === 'skipped' || result === undefined;
+  return health.failed === 0 && completed(collection, lighthouseExpected) && completed(editorCollection, editorExpected) && publish === 'success' && deploy === 'success';
 }

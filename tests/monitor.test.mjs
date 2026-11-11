@@ -188,7 +188,7 @@ test('pipeline health distinguishes a publish-only push from missing requested m
   const published = { event: 'push', collection: 'skipped', publish: 'success', deploy: 'success' };
   assert.equal(pipelineHealthy({ failed: 0 }, published), true);
   assert.equal(pipelineHealthy({ failed: 0 }, { ...published, event: 'workflow_dispatch' }), false);
-  assert.equal(pipelineHealthy({ failed: 0 }, { ...published, event: 'schedule', collection: 'success' }), true);
+  assert.equal(pipelineHealthy({ failed: 0 }, { ...published, event: 'schedule', collection: 'success', editorCollection: 'success' }), true);
   assert.equal(pipelineHealthy({ failed: 1 }, { ...published, collection: 'success' }), false);
   assert.equal(pipelineHealthy({ failed: 0 }, { ...published, deploy: 'failure' }), false);
 });

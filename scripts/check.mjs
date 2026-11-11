@@ -1,10 +1,12 @@
 import fs from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { parseDocument } from 'yaml';
+import { validateEditorConfig } from '../web/editor-model.mjs';
 import { validateConfig } from './lib.mjs';
 for (const directory of ['scripts', 'web', 'tests']) {
   for (const file of await fs.readdir(directory)) if (file.endsWith('.mjs')) execFileSync(process.execPath, ['--check', `${directory}/${file}`], { stdio: 'pipe' });
 }
+validateEditorConfig(JSON.parse(await fs.readFile('editor-benchmark.config.json', 'utf8')));
 validateConfig(JSON.parse(await fs.readFile('monitor.config.json', 'utf8')));
 for (const file of await fs.readdir('.github/workflows')) {
   const document = parseDocument(await fs.readFile(`.github/workflows/${file}`, 'utf8'), { uniqueKeys: true });

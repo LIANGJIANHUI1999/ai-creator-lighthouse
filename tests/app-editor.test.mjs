@@ -1,0 +1,25 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import { summarizeEditor } from '../web/editor-model.mjs';
+test('app switches to the editor view with editor-only data and preserves locale and environment filters',async t=>{
+ const config=JSON.parse(await fs.readFile('monitor.config.json','utf8')),editorConfig=JSON.parse(await fs.readFile('editor-benchmark.config.json','utf8'));
+ const metrics={editorReadyMs:900,previewReadyMs:400,filmstripReadyMs:600,playResponseMs:30,seekResponseMs:50,trimResponseMs:40,droppedFrameRatio:0,longTaskCount:0,exportRtf:.5};
+ const runs=[1,2,3].map(index=>({index,metrics,detail:{},failures:[]}));
+ const batch={id:'100-1-editor-staging',environment:'staging',origin:config.environments.staging.origin,path:editorConfig.path,generatedAt:new Date().toISOString(),comparisonKey:'same',runsPerBatch:3,versions:{chrome:'157',engines:['webcodecs']},fixture:editorConfig.fixture,targets:editorConfig.targets,critical:editorConfig.critical,runs,failures:[],summary:summarizeEditor(runs,3,editorConfig)};
+ const elements=new Map(), element=id=>{if(!elements.has(id))elements.set(id,{innerHTML:'',textContent:'',hidden:false,setAttribute(){},removeAttribute(){}});return elements.get(id);};
+ const saved=Object.fromEntries(['document','location','history','fetch'].map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)]));
+ t.after(()=>{for(const[key,descriptor]of Object.entries(saved))descriptor?Object.defineProperty(globalThis,key,descriptor):delete globalThis[key];});
+ let click;
+ globalThis.document={documentElement:{},getElementById:element,querySelectorAll:()=>[],addEventListener:(event,fn)=>{if(event==='click')click=fn;}};
+ globalThis.location={search:'?env=staging&view=editor',hash:''};globalThis.history={replaceState(){}};
+ globalThis.fetch=async url=>{assert.equal(url,'./data.json');return{ok:true,json:async()=>({schemaVersion:1,config,summaries:[],reports:{},editorSummaries:[batch]})};};
+ await import('../web/app.mjs');await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(element('dashboard').hidden,false);assert.equal(element('load-status').hidden,true);assert.equal(element('lighthouse-view').hidden,true);assert.equal(element('editor-view').hidden,false);
+ assert.match(element('editor-view').innerHTML,/编辑器实操基准/);assert.match(element('editor-view').innerHTML,/0.5/);
+ const press=values=>click({target:{closest:()=>({dataset:{},...values})}});
+ press({dataset:{editorMetric:'exportRtf'}});assert.match(element('editor-view').innerHTML,/aria-label="导出 RTF/);
+ press({id:'language'});assert.match(element('editor-view').innerHTML,/Editor workflow benchmark/);
+ press({dataset:{env:'production'}});assert.match(element('editor-view').innerHTML,/No editor workflow measurements yet/);
+ press({dataset:{view:'lighthouse'}});assert.equal(element('editor-view').hidden,true);assert.equal(element('lighthouse-view').hidden,false);
+});

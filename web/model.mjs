@@ -22,5 +22,5 @@ export const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char 
 export function dataPresentation({ loading, error, data }) {
   if (loading) return { hidden: false, key: 'loading', retry: false };
   if (error) return { hidden: false, key: 'loadError', retry: true };
-  return data?.summaries.length ? { hidden: true, key: null, retry: false } : { hidden: false, key: 'empty', retry: false };
+  return (data?.summaries?.length || data?.editorSummaries?.length) ? { hidden: true, key: null, retry: false } : { hidden: false, key: 'empty', retry: false };
 }

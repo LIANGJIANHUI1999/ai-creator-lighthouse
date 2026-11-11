@@ -189,3 +189,22 @@ footer > p { max-width: 60ch; margin: 0; }
 .category-strip small { font-size: 10px; }
 
 @media (max-width: 413px) { #selected-status { grid-template-columns: minmax(0, 1fr); gap: 16px; } }
+.benchmark-views { margin-bottom: 28px; }
+.editor-intro { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+.editor-intro h2 { font-size: 23px; }
+.editor-intro p { max-width: 75ch; }
+.editor-lab-note { margin: 20px 0 28px; padding-left: 12px; border-left: 2px solid var(--color-rule); color: var(--color-muted); font-size: 12px; }
+.editor-metrics { display: flex; flex-direction: column; gap: 4px; }
+.editor-chart svg { display: block; width: 100%; height: auto; min-height: 260px; max-height: 620px; }
+.editor-chart text { fill: var(--color-muted); font: 12px var(--font-mono); }
+.editor-overview, .editor-history { margin-top: 32px; }
+.editor-overview h2, .editor-history h2 { margin-bottom: 16px; }
+.editor-errors { white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.7 var(--font-mono); }
+@media (max-width: 767px) {
+  .editor-intro { flex-direction: column; gap: 12px; }
+  .editor-metrics { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .editor-chart svg { min-height: 180px; }
+  .editor-chart text { font-size: 16px; }
+}
+
+@media (max-width: 600px) { .editor-metrics { grid-template-columns: minmax(0,1fr); } }
