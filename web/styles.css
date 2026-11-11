@@ -208,3 +208,4 @@ footer > p { max-width: 60ch; margin: 0; }
 }
 
 @media (max-width: 600px) { .editor-metrics { grid-template-columns: minmax(0,1fr); } }
+.benchmark-views button { font-size: 12px; padding: 8px 12px; }
