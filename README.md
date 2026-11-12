@@ -20,8 +20,9 @@
 - 北京时间每天 **09:17、21:17** 采集两个环境；cron 使用 UTC `17 1,13 * * *`。
 - 每页 **3 次**独立匿名导航，清理浏览器缓存与站点存储；每个指标分别取中位数，并保留最小/最大值。
 - 桌面视口 1350 × 940，模拟 40ms RTT、10240Kbps 网络、CPU ×1。固定 Lighthouse、Chrome for Testing 和 Node 版本。
+- 手机端单独使用 `mobile-v1-slow4g`：Lighthouse 默认 Android UA、412 × 823 视口、DPR 1.75、模拟慢速 4G（150ms RTT / 1638.4Kbps）、CPU ×4。属于模拟手机实验室数据；手机与桌面分别展示，不作为真实手机或真实用户指标。
 - 当前配置 `desktop-v2-native-ua` 显式使用固定 Chrome 的原生桌面 UA，避免 Lighthouse 默认的移动端 UA。旧 `desktop-v1` 批次虽然用了桌面视口及评分，UA 仍为移动端；历史数据保留，但不与修正后的批次连接或做回退比较。匿名 CI、个人浏览器会话和不同语言页面也需分别比较。
-- 同一环境内页面串行测量；两个环境使用独立 GitHub-hosted runner 并行运行。
+- 定时同时采集正式/测试环境的桌面与手机，共四个独立 runner；每个目标内页面串行测量。
 - 失败样本自动重试 1 次。HTTP 错误、跳转到登录页/其他路由、Lighthouse 运行错误和缺失必要指标均视为采集失败。
 - 不执行生成、提交或支付操作，不使用登录 Cookie，不需要业务仓库或云服务凭据。
 
@@ -34,8 +35,9 @@ GitHub schedule 只从默认分支触发，可能延迟或丢弃高负载时的�
 1. `environment`：`all`、`production` 或 `staging`。
 2. `routes`：留空测全部；也可填写 `landing,home` 等页面 ID。
 3. `runs`：默认 `3`；支持 `1`、`5`。
+4. `device`：默认 `all` 同时测桌面和手机；可选择 `desktop` 或 `mobile` 单独测量。此选项用于 Lighthouse 页面采集。
 
-页面 ID：`landing`、`home`、`ai-video`、`video-create`、`image-create`、`tools`、`clothes-transfer`、`editor`，以及仅测试环境可用的 `ai-ads-en`。
+页面 ID：`landing`、`home`、`ai-video`、`video-create`、`image-create`、`tools`、`clothes-transfer`、`editor`；测试环境另有 `subscribe`、`ai-ads-en`，正式环境另有 `subscribe-login`。
 
 英文广告页可选择 `environment=staging`、`routes=ai-ads-en`、`runs=3` 单独采集。路由的可选 `environments` 配置用于限制采集与看板展示范围；手动选择不适用的环境会在采集前明确拒绝。
 
@@ -43,7 +45,9 @@ GitHub schedule 只从默认分支触发，可能延迟或丢弃高负载时的�
 
 ## 如何使用看板
 
-切换正式/测试环境和页面，查看 Performance、LCP、CLS、TBT 的指标、目标及历史趋势。支持 7 天、30 天、90 天和全部时间，中英文界面，时间统一为北京时间。
+切换正式/测试环境、桌面/手机和页面，查看 Performance、LCP、CLS、TBT 的指标、目标及历史趋势。设备切换同时隔离最近一次结果、采集新鲜度、概览、历史、趋势和报告下载；链接可带 `device=mobile`。支持 7 天、30 天、90 天和全部时间，中英文界面，时间统一为北京时间。
+
+既有记录按原桌面口径保留，不改写历史。桌面批次 ID 和报告地址保持兼容；手机批次 ID 带 `-mobile`，手机逐页报告放在 `reports/<environment>/mobile/`，Artifact 名称以 `lighthouse-mobile-` 开头。公开 `data.json` 中原有 `summaries`、`reports` 继续代表桌面记录与报告，`summariesByDevice`、`reportsByDevice` 提供两种设备的独立索引，防止旧客户端读错设备。
 
 趋势仅连接相同环境、测量工具版本、配置和重复次数的完整采集。工具升级会开启新的对比序列；失败不会被记为零分或悄悄忽略。本次采集不完整时保留有效指标并明确标记，不会显示“达标”。手动只测部分页面时，其余页面继续显示各自最近一次记录和时间。
 
@@ -75,7 +79,7 @@ GitHub schedule 只从默认分支触发，可能延迟或丢弃高负载时的�
 - 播放固定 2 秒，定位到约 55%，将出点裁切到约 70%，核对实际成片时长后点击真实导出按钮。确认生成非空 MP4，再计算 **RTF = 导出总耗时 / 成片时长**，其中包含首次导出代码下载。RTF 越低越好。
 - 阈值沿用业务项目现有 `editor-benchmark.config.json` 的目标。运行中的导出引擎、软件渲染器、CPU、工具版本、素材哈希和场景版本全部记录；变化时分开比较，不将 Linux 软件渲染结果当作用户硬件性能。
 
-定时任务每天自动包含两类采集。手动运行增加 `suite`：默认 `lighthouse` 保持原有行为；选择 `editor` 可只测编辑器（`routes` 留空），选择 `all` 可同时测两类。`environment` 和 `runs` 沿用现有输入。
+定时任务每天自动包含两类采集。手动运行增加 `suite`：默认 `lighthouse`；选择 `editor` 可只测编辑器（`routes` 留空），选择 `all` 可同时测两类。编辑器实操仍为桌面基准，`suite=editor` 可选 `device=all` 或 `desktop`；手机端覆盖编辑器页面的 Lighthouse 首次加载，不混入这套实操历史。`environment` 和 `runs` 沿用现有输入。
 
 编辑器批次长期保存在 `monitor-data` 分支的 `editor-history/`，与 Lighthouse 历史独立。看板提供逐指标趋势、具体未达标项、每次原始数据、JSON 和静态 HTML 报告；完整阶段诊断放入 30 天 Artifact。先归档和发布可用证据，再由 `Collection health` 报告未完成的测量。
 
@@ -116,6 +120,7 @@ pnpm test
 
 ```sh
 pnpm collect --environment=staging --routes=landing,home --runs=3
+pnpm collect --environment=staging --device=mobile --routes=landing,home --runs=3
 ```
 
 构建看板读取本地 `monitor-data/history/`。CI 会恢复历史分支和报告，本地可提供已有归档：

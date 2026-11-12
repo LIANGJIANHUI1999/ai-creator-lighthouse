@@ -1,5 +1,5 @@
 name: Monitor
-run-name: Lighthouse · ${{ github.event_name }} · ${{ inputs.environment || 'all' }}
+run-name: Lighthouse · ${{ github.event_name }} · ${{ inputs.environment || 'all' }} · ${{ inputs.device || 'all' }}
 on:
   push:
     branches: [main]
@@ -20,6 +20,11 @@ on:
         type: choice
         options: [all, production, staging]
         default: all
+      device:
+        description: Lighthouse device (editor workflow uses desktop only)
+        type: choice
+        options: [all, desktop, mobile]
+        default: all
       routes:
         description: Comma-separated route IDs; empty measures all pages available in the selected environment
         type: string
@@ -39,6 +44,9 @@ jobs:
     name: Required Quality Gate
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    outputs:
+      collect_matrix: ${{ steps.plan.outputs.collect_matrix }}
+      lighthouse_devices: ${{ steps.plan.outputs.lighthouse_devices }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -52,30 +60,32 @@ jobs:
       - name: Unit and integration tests
         run: pnpm test
       - name: Validate measurement inputs
+        id: plan
         env:
           TARGET: ${{ inputs.environment || 'all' }}
           ROUTES: ${{ inputs.routes || '' }}
           RUNS: ${{ inputs.runs || '3' }}
           SUITE: ${{ inputs.suite || 'all' }}
+          DEVICE: ${{ inputs.device || 'all' }}
         run: |
           node --input-type=module <<'JS'
           import fs from 'node:fs';
-          import { selectPlan } from './scripts/lib.mjs';
+          import { collectionMatrix } from './scripts/lib.mjs';
           const config = JSON.parse(fs.readFileSync('monitor.config.json', 'utf8'));
-          const targets = process.env.TARGET === 'all' ? Object.keys(config.environments) : [process.env.TARGET];
           if (process.env.SUITE === 'editor' && process.env.ROUTES) throw new Error('routes is only used for Lighthouse; leave empty for suite=editor');
-          for (const environment of targets) selectPlan(config, { environment, routes: process.env.SUITE === 'editor' ? '' : process.env.ROUTES, runs: process.env.RUNS });
+          if (process.env.SUITE === 'editor' && process.env.DEVICE === 'mobile') throw new Error('Editor workflow is desktop-only; choose device=desktop or all');
+          const matrix = collectionMatrix(config, { environment: process.env.TARGET, device: process.env.SUITE === 'editor' ? 'desktop' : process.env.DEVICE, routes: process.env.SUITE === 'editor' ? '' : process.env.ROUTES, runs: process.env.RUNS });
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `collect_matrix=${JSON.stringify(matrix)}\nlighthouse_devices=${[...new Set(matrix.include.map(target => target.device))].join(',')}\n`);
           JS
   collect:
-    name: Collect · ${{ matrix.environment }}
+    name: Collect · ${{ matrix.environment }} · ${{ matrix.device }}
     needs: quality-gate
     if: github.event_name != 'pull_request' && github.event_name != 'push' && inputs.suite != 'editor'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
       fail-fast: false
-      matrix:
-        environment: ${{ fromJSON(inputs.environment == 'production' && '["production"]' || inputs.environment == 'staging' && '["staging"]' || '["production","staging"]') }}
+      matrix: ${{ fromJSON(needs.quality-gate.outputs.collect_matrix) }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -98,23 +108,24 @@ jobs:
           TARGET: ${{ matrix.environment }}
           ROUTES: ${{ inputs.routes || '' }}
           RUNS: ${{ inputs.runs || '3' }}
-        run: pnpm collect --environment="$TARGET" --routes="$ROUTES" --runs="$RUNS"
+          DEVICE: ${{ matrix.device }}
+        run: pnpm collect --environment="$TARGET" --device="$DEVICE" --routes="$ROUTES" --runs="$RUNS"
       - name: Archive full reports
         id: archive-reports
         if: always()
         continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
-          name: lighthouse-${{ matrix.environment }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: artifacts/${{ matrix.environment }}/
+          name: ${{ matrix.artifactPrefix }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/${{ matrix.directory }}/
           retention-days: 30
           if-no-files-found: error
       - name: Retry full report upload
         if: ${{ !cancelled() && steps.archive-reports.outcome == 'failure' }}
         uses: actions/upload-artifact@v4
         with:
-          name: lighthouse-${{ matrix.environment }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: artifacts/${{ matrix.environment }}/
+          name: ${{ matrix.artifactPrefix }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/${{ matrix.directory }}/
           retention-days: 30
           if-no-files-found: error
           overwrite: true
@@ -222,6 +233,8 @@ jobs:
           for target in production staging; do
             folder="incoming/lighthouse-$target-$RUN_ID-$ATTEMPT"
             if [ -d "$folder" ]; then mv "$folder" "incoming/$target"; fi
+            mobile_folder="incoming/lighthouse-mobile-$target-$RUN_ID-$ATTEMPT"
+            if [ -d "$mobile_folder" ]; then mkdir -p incoming/mobile; mv "$mobile_folder" "incoming/mobile/$target"; fi
             editor_folder="incoming/editor-$target-$RUN_ID-$ATTEMPT"
             if [ -d "$editor_folder" ]; then mv "$editor_folder" "incoming/editor-$target"; fi
           done
@@ -230,6 +243,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           TARGET_ENVIRONMENTS: ${{ inputs.environment == 'production' && 'production' || inputs.environment == 'staging' && 'staging' || 'production,staging' }}
+          TARGET_DEVICES: ${{ needs.quality-gate.outputs.lighthouse_devices }}
+          TARGET_ROUTES: ${{ inputs.routes || '' }}
+          EXPECTED_RUNS: ${{ inputs.runs || '3' }}
         run: node scripts/archive.mjs
       - name: Append editor workflow history
         if: github.event_name != 'push' && (github.event_name == 'schedule' || inputs.suite == 'editor' || inputs.suite == 'all')

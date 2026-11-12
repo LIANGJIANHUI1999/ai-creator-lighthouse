@@ -1,11 +1,13 @@
 import { routeStates } from './budgets.mjs';
+import { summaryDevice } from './devices.mjs';
 
-export function latestForRoute(summaries, environment, routeId) {
-  const summary = summaries.filter(item => item.environment === environment && item.routes.some(route => route.id === routeId)).toSorted((a, b) => b.generatedAt.localeCompare(a.generatedAt))[0];
+export function latestForRoute(summaries, environment, routeId, device = 'desktop') {
+  const summary = summaries.filter(item => item.environment === environment && summaryDevice(item) === device && item.routes.some(route => route.id === routeId)).toSorted((a, b) => b.generatedAt.localeCompare(a.generatedAt))[0];
   return summary ? { summary, route: summary.routes.find(route => route.id === routeId) } : null;
 }
-export function seriesFor(summaries, environment, routeId, metric, days, now = Date.now()) {
-  const latest = latestForRoute(summaries, environment, routeId);
+export function seriesFor(summaries, environment, routeId, metric, days, now = Date.now(), device = 'desktop') {
+  summaries = summaries.filter(summary => summaryDevice(summary) === device);
+  const latest = latestForRoute(summaries, environment, routeId, device);
   if (!latest) return [];
   const comparisonKey = latest.summary.comparisonKey ?? summaries.filter(summary => summary.environment === environment && summary.comparisonKey && summary.routes.some(route => route.id === routeId)).toSorted((a, b) => b.generatedAt.localeCompare(a.generatedAt))[0]?.comparisonKey;
   return summaries.filter(summary => summary.environment === environment && summary.comparisonKey === comparisonKey && summary.runsPerRoute === latest.summary.runsPerRoute && (!days || now - Date.parse(summary.generatedAt) <= days * 86400000))
@@ -22,5 +24,5 @@ export const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char 
 export function dataPresentation({ loading, error, data }) {
   if (loading) return { hidden: false, key: 'loading', retry: false };
   if (error) return { hidden: false, key: 'loadError', retry: true };
-  return (data?.summaries?.length || data?.editorSummaries?.length) ? { hidden: true, key: null, retry: false } : { hidden: false, key: 'empty', retry: false };
+  return (data?.summaries?.length || data?.summariesByDevice?.mobile?.length || data?.editorSummaries?.length) ? { hidden: true, key: null, retry: false } : { hidden: false, key: 'empty', retry: false };
 }

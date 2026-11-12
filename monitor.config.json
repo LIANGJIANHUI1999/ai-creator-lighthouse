@@ -19,6 +19,16 @@
     "disableStorageReset": false,
     "maxWaitForLoad": 45000
   },
+  "mobileProfile": {
+    "id": "mobile-v1-slow4g",
+    "formFactor": "mobile",
+    "emulatedUserAgent": true,
+    "screenEmulation": { "mobile": true, "width": 412, "height": 823, "deviceScaleFactor": 1.75, "disabled": false },
+    "throttlingMethod": "simulate",
+    "throttling": { "rttMs": 150, "throughputKbps": 1638.4, "cpuSlowdownMultiplier": 4, "requestLatencyMs": 562.5, "downloadThroughputKbps": 1474.56, "uploadThroughputKbps": 675 },
+    "disableStorageReset": false,
+    "maxWaitForLoad": 45000
+  },
   "routes": [
     { "id": "landing", "labelKey": "landing", "path": "/zh/" },
     { "id": "home", "labelKey": "home", "path": "/zh/home/" },

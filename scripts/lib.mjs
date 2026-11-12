@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { routesForEnvironment } from '../web/routes.mjs';
+import { devices, profileForDevice, summaryDevice, collectionDirectory } from '../web/devices.mjs';
 import { lowerIsBetter, metricStatus, routeStates, worstStatus } from '../web/budgets.mjs';
 import { assessSeoPolicy, summarizeSeoPolicy } from '../web/seo-policy.mjs';
 
@@ -14,6 +15,11 @@ export const median = values => {
 
 export function validateConfig(config) {
   if (config.profile?.formFactor !== 'desktop' || config.profile.emulatedUserAgent !== false || config.profile.screenEmulation?.mobile !== false) throw new Error('Expected a desktop viewport and native desktop user agent');
+  if (config.mobileProfile !== undefined && (config.mobileProfile?.formFactor !== 'mobile' || config.mobileProfile.emulatedUserAgent !== true || config.mobileProfile.screenEmulation?.mobile !== true)) throw new Error('Expected a mobile viewport and mobile user agent');
+  for (const device of devices.filter(device => device === 'desktop' || config.mobileProfile)) {
+    const profile = profileForDevice(config, device), screen = profile.screenEmulation;
+    if (!/^[a-z0-9-]+$/.test(profile.id) || !screen || screen.disabled !== false || ![screen.width, screen.height, screen.deviceScaleFactor].every(value => Number.isFinite(value) && value > 0) || profile.throttlingMethod !== 'simulate' || ![profile.throttling?.rttMs, profile.throttling?.throughputKbps, profile.throttling?.cpuSlowdownMultiplier].every(value => Number.isFinite(value) && value > 0) || profile.disableStorageReset !== false) throw new Error('Invalid measurement profile');
+  }
   if (config.schemaVersion !== 1 || !Array.isArray(config.routes) || !config.routes.length) throw new Error('Invalid monitoring configuration');
   if (!Number.isInteger(config.retryCount) || config.retryCount < 0 || config.retryCount > 2) throw new Error('Invalid retry budget');
   if (!/^[\w-]+\/[\w.-]+$/.test(config.repository)) throw new Error('Invalid repository');
@@ -36,7 +42,7 @@ export function validateConfig(config) {
   return config;
 }
 
-export function selectPlan(config, { environment = 'production', routes = '', runs = config.runs } = {}) {
+export function selectPlan(config, { environment = 'production', device = 'desktop', routes = '', runs = config.runs } = {}) {
   validateConfig(config);
   if (!Object.hasOwn(config.environments, environment)) throw new Error('Unknown environment');
   runs = Number(runs);
@@ -44,7 +50,16 @@ export function selectPlan(config, { environment = 'production', routes = '', ru
   const ids = routes.split(',').map(s => s.trim()).filter(Boolean);
   const available = routesForEnvironment(config, environment);
   if (ids.some(id => !available.some(route => route.id === id))) throw new Error('Unknown or unavailable route in selected environment');
-  return { environment, origin: config.environments[environment].origin, routes: available.filter(route => !ids.length || ids.includes(route.id)), runs };
+  return { environment, device, profile: profileForDevice(config, device), origin: config.environments[environment].origin, routes: available.filter(route => !ids.length || ids.includes(route.id)), runs };
+}
+
+export function collectionMatrix(config, { environment = 'all', device = 'all', routes = '', runs = config.runs } = {}) {
+  const targets = environment === 'all' ? Object.keys(config.environments) : [environment];
+  const selectedDevices = device === 'all' ? devices : [device];
+  return { include: targets.flatMap(environment => selectedDevices.map(device => {
+    selectPlan(config, { environment, device, routes, runs });
+    return { environment, device, directory: collectionDirectory(environment, device), artifactPrefix: `lighthouse-${device === 'mobile' ? 'mobile-' : ''}${environment}` };
+  })) };
 }
 
 export function routeStatus(route, config) {
@@ -91,7 +106,7 @@ export function regression(current, baseline) {
 }
 
 export function comparableBaseline(history, summary, routeId) {
-  return history.filter(previous => previous.environment === summary.environment && previous.comparisonKey === summary.comparisonKey && previous.runsPerRoute === summary.runsPerRoute && previous.generatedAt < summary.generatedAt)
+  return history.filter(previous => previous.environment === summary.environment && summaryDevice(previous) === summaryDevice(summary) && previous.comparisonKey === summary.comparisonKey && previous.runsPerRoute === summary.runsPerRoute && previous.generatedAt < summary.generatedAt)
     .toSorted((a, b) => b.generatedAt.localeCompare(a.generatedAt))
     .map(previous => previous.routes.find(route => route.id === routeId && route.status !== 'failed')).find(Boolean) ?? null;
 }
@@ -121,7 +136,7 @@ export async function runCollection({ config, plan, audit, saveReport, metadata,
     for (const error of errors) error.recovered = samples.some(sample => sample.report.startsWith(`${route.id}-run-${error.run}-`));
     routes.push(summarizeRoute(route, samples, errors, plan.runs, config));
   }
-  return { schemaVersion: 1, ...metadata, environment: plan.environment, origin: plan.origin, profile: config.profile, runsPerRoute: plan.runs, targets: config.targets, critical: config.critical, routes };
+  return { schemaVersion: 1, ...metadata, environment: plan.environment, device: plan.device ?? 'desktop', origin: plan.origin, profile: plan.profile ?? config.profile, runsPerRoute: plan.runs, targets: config.targets, critical: config.critical, routes };
 }
 
 export function pipelineHealthy(health, { event, collection, editorCollection, suite = 'lighthouse', publish, deploy }) {
