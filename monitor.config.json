@@ -22,7 +22,8 @@
   "routes": [
     { "id": "landing", "labelKey": "landing", "path": "/zh/" },
     { "id": "home", "labelKey": "home", "path": "/zh/home/" },
-    { "id": "subscribe", "labelKey": "subscribe", "path": "/zh/subscribe/" },
+    { "id": "subscribe", "labelKey": "subscribe", "path": "/zh/subscribe/", "environments": ["staging"] },
+    { "id": "subscribe-login", "labelKey": "subscribeLogin", "path": "/zh/subscribe/", "environments": ["production"] },
     { "id": "ai-video", "labelKey": "aiVideo", "path": "/zh/ai-video/" },
     { "id": "video-create", "labelKey": "videoCreate", "path": "/zh/video-create/?mode=text" },
     { "id": "image-create", "labelKey": "imageCreate", "path": "/zh/image-create/" },

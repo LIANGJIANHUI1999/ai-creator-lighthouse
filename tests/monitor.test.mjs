@@ -30,13 +30,15 @@ test('configuration selects both public deployment targets and preserves route p
   assert.equal(selectPlan(config, { routes: 'video-create,landing' }).routes[1].path, '/zh/video-create/?mode=text');
   assert.equal(selectPlan(config).routes.length, 9);
 });
-test('public plans and payment entry is scheduled in both environments with all Lighthouse categories', async () => {
+test('public plans and protected production entry have separate targets and all Lighthouse categories', async () => {
   for (const environment of ['production','staging']) {
-    const plan = selectPlan(config,{environment,routes:'subscribe',runs:3});
-    assert.ok(selectPlan(config,{environment}).routes.some(route => route.id === 'subscribe'));
+    const id = environment === 'staging' ? 'subscribe' : 'subscribe-login';
+    const plan = selectPlan(config,{environment,routes:id,runs:3});
+    assert.ok(selectPlan(config,{environment}).routes.some(route => route.id === id));
     assert.equal(plan.routes[0].path,'/zh/subscribe/');
-    assert.equal(messages.zh[plan.routes[0].labelKey],'套餐与支付');
-    assert.equal(messages.en[plan.routes[0].labelKey],'Plans & payment');
+    assert.equal(messages.zh[plan.routes[0].labelKey],environment === 'staging' ? '套餐与支付' : '套餐登录入口');
+    assert.equal(messages.en[plan.routes[0].labelKey],environment === 'staging' ? 'Plans & payment' : 'Plans sign-in entry');
+    assert.throws(()=>selectPlan(config,{environment,routes:environment === 'staging' ? 'subscribe-login' : 'subscribe'}),/unavailable/);
     const result = await runCollection({config,plan,metadata:{id:`plans-${environment}`},audit:async url => ({lhr:lhr({requestedUrl:url,finalDisplayedUrl:url})}),saveReport:async()=>{}});
     assert.equal(result.routes[0].successCount,3);
     for (const key of ['performance','accessibility','bestPractices','seo']) assert.equal(result.routes[0].metrics[key],100);
