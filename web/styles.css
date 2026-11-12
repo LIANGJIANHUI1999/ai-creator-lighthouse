@@ -137,6 +137,7 @@ footer > p { max-width: 60ch; margin: 0; }
 .status-issue.warning { color: var(--color-warning); }
 .status-issue.critical, .status-issue.failed { color: var(--color-critical); }
 .status-issue strong { color: inherit; font-weight: 500; }
+.status-note { margin: 6px 0 0; color: var(--color-muted); font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
 .status-cell { min-width: 180px; max-width: 280px; vertical-align: top; }
 .status-details { margin-top: 4px; }
 .history-row { grid-template-columns: minmax(150px, .8fr) minmax(240px, 1.4fr) minmax(0, 1.4fr); }

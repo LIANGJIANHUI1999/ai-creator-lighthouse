@@ -25,9 +25,9 @@
     { "id": "ai-video", "labelKey": "aiVideo", "path": "/zh/ai-video/" },
     { "id": "video-create", "labelKey": "videoCreate", "path": "/zh/video-create/?mode=text" },
     { "id": "image-create", "labelKey": "imageCreate", "path": "/zh/image-create/" },
-    { "id": "tools", "labelKey": "tools", "path": "/zh/tools/" },
+    { "id": "tools", "labelKey": "tools", "path": "/zh/tools/", "seoPolicy": "noindex" },
     { "id": "clothes-transfer", "labelKey": "clothesTransfer", "path": "/zh/tools/clothes-transfer/" },
-    { "id": "editor", "labelKey": "editor", "path": "/zh/editor/" },
+    { "id": "editor", "labelKey": "editor", "path": "/zh/editor/", "seoPolicy": "noindex" },
     { "id": "ai-ads-en", "labelKey": "aiAdsEn", "path": "/en/ai-ads/", "environments": ["staging"] }
   ],
   "targets": { "performance": 90, "accessibility": 100, "bestPractices": 95, "seo": 95, "lcpMs": 2500, "cls": 0.1, "tbtMs": 200 },

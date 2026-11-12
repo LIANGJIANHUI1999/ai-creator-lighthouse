@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { routesForEnvironment } from '../web/routes.mjs';
-import { lowerIsBetter, metricStatus } from '../web/budgets.mjs';
+import { lowerIsBetter, metricStatus, routeStates, worstStatus } from '../web/budgets.mjs';
+import { assessSeoPolicy, summarizeSeoPolicy } from '../web/seo-policy.mjs';
 
 export const metricKeys = ['performance', 'accessibility', 'bestPractices', 'seo', 'lcpMs', 'cls', 'tbtMs'];
 export { lowerIsBetter, metricStatus };
@@ -25,6 +26,7 @@ export function validateConfig(config) {
     if (!/^[a-z][a-z0-9-]*$/.test(route.id) || ids.has(route.id) || !route.path.startsWith('/') || route.path.startsWith('//')) throw new Error('Invalid or duplicate route');
     if (new URL(route.path, 'https://example.com').origin !== 'https://example.com') throw new Error('Cross-origin route');
     if (route.environments !== undefined && (!Array.isArray(route.environments) || !route.environments.length || new Set(route.environments).size !== route.environments.length || route.environments.some(environment => !Object.hasOwn(config.environments, environment)))) throw new Error('Invalid route environment scope');
+    if (route.seoPolicy !== undefined && route.seoPolicy !== 'noindex') throw new Error('Invalid SEO policy');
     ids.add(route.id);
   }
   for (const key of metricKeys) {
@@ -46,12 +48,10 @@ export function selectPlan(config, { environment = 'production', routes = '', ru
 }
 
 export function routeStatus(route, config) {
-  if (route.successCount !== route.expectedCount) return 'failed';
-  const statuses = metricKeys.map(key => metricStatus(key, route.metrics[key], config));
-  return ['failed', 'critical', 'warning'].find(status => statuses.includes(status)) ?? 'pass';
+  return worstStatus(Object.values(routeStates(route, config)).map(group => group.status));
 }
 
-export function extractResult(lhr, expectedUrl) {
+export function extractResult(lhr, expectedUrl, seoPolicy) {
   if (lhr.runtimeError) throw new Error(`Lighthouse: ${lhr.runtimeError.code}`);
   if (lhr.audits['http-status-code']?.score === 0) throw new Error('Page returned an unsuccessful HTTP status');
   const finalUrl = new URL(lhr.finalDisplayedUrl ?? lhr.finalUrl ?? lhr.requestedUrl);
@@ -67,7 +67,7 @@ export function extractResult(lhr, expectedUrl) {
     fcpMs: lhr.audits['first-contentful-paint']?.numericValue ?? null,
   };
   if (metricKeys.some(key => !Number.isFinite(metrics[key]))) throw new Error('Required Lighthouse metrics are missing');
-  return { metrics, finalUrl: finalUrl.href };
+  return { metrics, finalUrl: finalUrl.href, ...(seoPolicy ? { seoAssessment: assessSeoPolicy(lhr, seoPolicy) } : {}) };
 }
 
 export function summarizeRoute(route, samples, errors, expectedCount, config) {
@@ -78,6 +78,7 @@ export function summarizeRoute(route, samples, errors, expectedCount, config) {
   }));
   const representative = samples.toSorted((a, b) => Math.abs(a.metrics.performance - metrics.performance) - Math.abs(b.metrics.performance - metrics.performance))[0];
   const result = { ...route, metrics, ranges, successCount: samples.length, expectedCount, errors, representative: representative?.report ?? null, samples };
+  if (route.seoPolicy) result.seoAssessment = summarizeSeoPolicy(samples, route.seoPolicy, expectedCount);
   return { ...result, status: routeStatus(result, config) };
 }
 
@@ -108,7 +109,7 @@ export async function runCollection({ config, plan, audit, saveReport, metadata,
           if (!result?.lhr) throw new Error('Lighthouse did not return a report');
           const report = `${route.id}-run-${index}-attempt-${attempt}`;
           await saveReport(report, result);
-          const extracted = extractResult(result.lhr, url);
+          const extracted = extractResult(result.lhr, url, route.seoPolicy);
           samples.push({ ...extracted, report });
           break;
         } catch (error) {

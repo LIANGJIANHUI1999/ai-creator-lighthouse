@@ -1,5 +1,6 @@
 export const messages = {
   zh: {
+    expectedNoindex: '按预期禁止收录', rawSeo: 'SEO 原始分', seoOtherAudits: '其余 SEO 最低分', seoPolicyMissing: '缺少完整索引策略证据，请重新采集', seoPolicyMismatch: '应禁止收录，但未确认到 noindex 指令',
     pageLighthouse: '页面 Lighthouse', editorView: '编辑器实操', benchmarkView: '监测类型', editorBenchmark: '编辑器实操基准', editorMetric: '操作指标', editorMedian: '中位数', countUnit: '个',
     editorReadyMs: '编辑器就绪', previewReadyMs: '导入至首帧', filmstripReadyMs: '缩略图就绪', playResponseMs: '播放首帧响应', seekResponseMs: '定位帧响应', trimResponseMs: '裁切响应', droppedFrameRatio: '播放掉帧率', longTaskCount: '长任务数', exportRtf: '导出 RTF',
     editorScope: '固定 5 秒 · 640×360 · 30fps 素材；导入、播放、定位、裁切、导出各阶段独立计时。', editorLabNote: 'GitHub Linux 软件渲染实验室基准；各指标独立判断，不计入 Lighthouse 百分制评分。掉帧率取自视频解码帧计数。', editorRtfNote: 'RTF = 导出总耗时 ÷ 裁切后的成片时长，越低越好；包含导出代码加载。', editorCompareNote: '仅连接相同素材、浏览器、CPU、渲染器、导出引擎、场景版本和重复次数的完整指标样本。',
@@ -14,7 +15,7 @@ export const messages = {
     metricFilter: '趋势指标', timeFilter: '时间范围', environmentFilter: '环境', pageFilter: '选择监测页面',
     chartHint: '仅连接同环境、同工具版本、同配置和同重复次数的完整采集；失败不记作零分。', singlePoint: '已有一次采集；下一次可比采集完成后显示趋势连线。', noPoints: '所选时段没有完整的可比样本。',
     viewReport: '查看逐页报告', downloadJson: '下载报告 JSON', downloadBatch: '下载完整报告 ZIP', downloadSummary: '下载批次摘要', artifactNote: '完整 ZIP 保留 30 天，下载需登录 GitHub；历史指标长期保存。', reportExpired: '完整报告已过保留期', reportUnavailable: '本次无有效逐页报告',
-    performanceStatus: '性能状态', qualityStatus: '页面质量状态', criticalThreshold: '严重阈值', unmetItems: '未达标项', missingMetric: '缺少有效指标或阈值', statusScope: '性能状态依据 Performance、LCP、CLS、TBT；页面质量状态依据无障碍、最佳实践和 SEO。',
+    performanceStatus: '性能状态', qualityStatus: '页面质量状态', criticalThreshold: '严重阈值', unmetItems: '未达标项', missingMetric: '缺少有效指标或阈值', statusScope: '性能状态依据 Performance、LCP、CLS、TBT；页面质量状态依据无障碍、最佳实践和 SEO。明确禁止收录的页面单独核验 noindex 与其余 SEO 审计，保留原始 SEO 分数。',
     overview: '页面概览', page: '页面', status: '状态', details: '报告', collectedAt: '采集时间', batch: '批次', coverage: '完成页面', evidence: '采集证据',
     regressions: '较上次明显回退', noRegression: '无明显回退', showData: '展开趋势数据', dateAxis: '采集时间 · 北京时间', scoreUnit: '分', milliseconds: '毫秒', clsUnit: '无单位',
     stale: '超过 18 小时没有新采集，请检查 Actions。', failedNotice: '该页面采集不完整，详情见批次记录；下方指标仅来自已有有效样本。',
@@ -23,6 +24,7 @@ export const messages = {
     language: '切换语言', refresh: '刷新记录', sampleRange: '本批波动范围', runLink: '查看运行', versionChanged: '口径变更会开启新的对比序列。',
   },
   en: {
+    expectedNoindex: 'Intentionally not indexed', rawSeo: 'Raw SEO score', seoOtherAudits: 'Other SEO minimum score', seoPolicyMissing: 'Complete indexing-policy evidence is missing; collect again', seoPolicyMismatch: 'Expected noindex directive was not confirmed',
     pageLighthouse: 'Page Lighthouse', editorView: 'Editor benchmark', benchmarkView: 'Measurement type', editorBenchmark: 'Editor workflow benchmark', editorMetric: 'Operation metric', editorMedian: 'Median', countUnit: 'count',
     editorReadyMs: 'Editor ready', previewReadyMs: 'Import to first frame', filmstripReadyMs: 'Filmstrip ready', playResponseMs: 'Play to first frame', seekResponseMs: 'Seek frame response', trimResponseMs: 'Trim response', droppedFrameRatio: 'Playback dropped frames', longTaskCount: 'Long tasks', exportRtf: 'Export RTF',
     editorScope: 'Fixed 5-second, 640×360, 30fps fixture. Import, playback, seeking, trimming and export are timed separately.', editorLabNote: 'Software-rendered Linux lab benchmark on GitHub. Metrics are assessed independently and do not contribute to the Lighthouse score. Dropped frames use video decoder counters.', editorRtfNote: 'RTF = total export time ÷ edited video duration. Lower is better; export code loading is included.', editorCompareNote: 'Only complete metric samples with matching fixture, browser, CPU, renderer, export engine, scenario version and repeat count are connected.',
@@ -37,7 +39,7 @@ export const messages = {
     metricFilter: 'Trend metric', timeFilter: 'Time range', environmentFilter: 'Environment', pageFilter: 'Select a monitored page',
     chartHint: 'Only complete runs with the same environment, tools, settings and sample count are connected. Failures are never zero scores.', singlePoint: 'One measurement is available. A line appears after the next comparable run.', noPoints: 'No complete comparable samples in this time range.',
     viewReport: 'Open page report', downloadJson: 'Download report JSON', downloadBatch: 'Download full report ZIP', downloadSummary: 'Download batch summary', artifactNote: 'Full ZIPs are retained for 30 days and require GitHub sign-in. Metric history is kept long term.', reportExpired: 'Full report retention expired', reportUnavailable: 'No valid page report for this run',
-    performanceStatus: 'Performance status', qualityStatus: 'Page quality status', criticalThreshold: 'Critical threshold', unmetItems: 'Unmet checks', missingMetric: 'Missing metric or budget', statusScope: 'Performance uses Performance, LCP, CLS and TBT. Page quality uses Accessibility, Best practices and SEO.',
+    performanceStatus: 'Performance status', qualityStatus: 'Page quality status', criticalThreshold: 'Critical threshold', unmetItems: 'Unmet checks', missingMetric: 'Missing metric or budget', statusScope: 'Performance uses Performance, LCP, CLS and TBT. Page quality uses Accessibility, Best practices and SEO. Intentional noindex pages verify that directive and all other SEO audits separately, retaining the raw SEO score.',
     overview: 'Page overview', page: 'Page', status: 'Status', details: 'Report', collectedAt: 'Collected at', batch: 'Batch', coverage: 'Complete pages', evidence: 'Measurement evidence',
     regressions: 'Significant regression', noRegression: 'No significant regression', showData: 'Show trend data', dateAxis: 'Collected at · Beijing time', scoreUnit: 'points', milliseconds: 'ms', clsUnit: 'unitless',
     stale: 'No new measurements in over 18 hours. Check Actions.', failedNotice: 'Collection is incomplete. See run details; the metrics below use only available valid samples.',
