@@ -17,7 +17,7 @@ import { execFileSync } from 'node:child_process';
 const config = JSON.parse(await fs.readFile('monitor.config.json','utf8'));
 const editorConfig = JSON.parse(await fs.readFile('editor-benchmark.config.json','utf8'));
 const metrics = {editorReadyMs:1000,previewReadyMs:500,filmstripReadyMs:800,playResponseMs:30,seekResponseMs:50,trimResponseMs:40,droppedFrameRatio:0,longTaskCount:0,exportRtf:.4};
-const runs = () => [1,2,3].map(index=>({index,metrics:{...metrics},failures:[],detail:{export:{engine:'webcodecs',bytes:1000}}}));
+const runs = () => [1,2,3].map(index=>({index,metrics:{...metrics},failures:[],detail:{export:{engine:'webcodecs',bytes:1000,videoPipeline:'source-frames'}}}));
 const batch = (overrides={}) => ({schemaVersion:1,kind:'editor-benchmark',id:'100-1-editor-staging',environment:'staging',origin:config.environments.staging.origin,path:editorConfig.path,generatedAt:'2026-11-11T08:00:00Z',runsPerBatch:3,comparisonKey:'same',versions:{chrome:'157',engines:['webcodecs'],renderer:'SwiftShader'},fixture:editorConfig.fixture,targets:editorConfig.targets,critical:editorConfig.critical,runs:runs(),failures:[],summary:summarizeEditor(runs(),3,editorConfig),...overrides});
 async function temporary(t) { const dir=await fs.mkdtemp(path.join(os.tmpdir(),'editor-monitor-test-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));return dir; }
 
@@ -79,6 +79,7 @@ test('editor archives are independent, immutable and preserve partial-run eviden
  const options={config,editorConfig,dataDirectory:data,incomingDirectory:incoming,artifacts:[{id:1,name:'editor-staging-100-1',expires_at:'2026-12-11T00:00:00Z'}],environments:['staging'],runId:'100',attempt:'1'};
  const first=await archiveEditor(options),second=await archiveEditor(options);
  assert.equal(second.history.length,1);assert.match(first.additions[0].artifact.url,/artifacts\/1$/);
+ assert.equal(first.additions[0].runs[0].detail.export.videoPipeline,'source-frames');
  const missing=await archiveEditor({...options,environments:['production'],expectedRuns:1});
  assert.equal(missing.additions[0].summary.overall,'failed');assert.equal(missing.additions[0].summary.expectedCount,1);
 });

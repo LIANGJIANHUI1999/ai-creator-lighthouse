@@ -149,7 +149,7 @@ export async function runEditorScenario(page, { url, fixturePath, config, timeou
         if (element.dataset.editorExportPhase !== 'done') throw new Error(element.textContent?.slice(0, 500) || 'Export failed');
         const blob = window.__editorBench.exportBlob;
         const header = blob ? new Uint8Array(await blob.slice(4, 8).arrayBuffer()) : [];
-        return { elapsedMs: Number(element.dataset.editorExportElapsedMs), bytes: Number(element.dataset.editorExportBytes), engine: element.dataset.editorExportEngine, mp4Header: String.fromCharCode(...header) };
+        return { elapsedMs: Number(element.dataset.editorExportElapsedMs), bytes: Number(element.dataset.editorExportBytes), engine: element.dataset.editorExportEngine, videoPipeline: element.dataset.editorExportVideoPipeline || null, mp4Header: String.fromCharCode(...header) };
       });
       exported.wallMs = Date.now() - start;
       if (exported.bytes <= 0 || !exported.engine || exported.mp4Header !== 'ftyp') throw new Error('Export did not produce a valid MP4');
