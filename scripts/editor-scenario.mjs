@@ -40,7 +40,7 @@ export async function runEditorScenario(page, { url, fixturePath, config, timeou
     const previewReadyMs = Date.now() - start;
     detail.source = await page.evaluate(() => {
       const video = [...document.querySelectorAll('video')].find(video => video.currentSrc && video.readyState >= 2);
-      return video ? { width: video.videoWidth, height: video.videoHeight, durationMs: video.duration * 1000 } : null;
+      return video ? { width: video.videoWidth, height: video.videoHeight, durationMs: video.duration * 1000, previewPipeline: document.querySelector('[data-editor-preview-pipeline]')?.dataset.editorPreviewPipeline || null } : null;
     });
     if (!detail.source || Math.abs(detail.source.durationMs - config.fixture.durationMs) > 100) throw new Error('Imported fixture duration does not match');
     metrics.previewReadyMs = previewReadyMs;
