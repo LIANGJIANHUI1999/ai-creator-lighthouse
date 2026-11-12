@@ -100,13 +100,24 @@ jobs:
           RUNS: ${{ inputs.runs || '3' }}
         run: pnpm collect --environment="$TARGET" --routes="$ROUTES" --runs="$RUNS"
       - name: Archive full reports
+        id: archive-reports
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: lighthouse-${{ matrix.environment }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/${{ matrix.environment }}/
           retention-days: 30
           if-no-files-found: error
+      - name: Retry full report upload
+        if: ${{ !cancelled() && steps.archive-reports.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-${{ matrix.environment }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/${{ matrix.environment }}/
+          retention-days: 30
+          if-no-files-found: error
+          overwrite: true
   editor-collect:
     name: Editor workflow · ${{ matrix.environment }}
     needs: quality-gate
@@ -147,13 +158,24 @@ jobs:
           RUNS: ${{ inputs.runs || '3' }}
         run: pnpm collect:editor --environment="$TARGET" --runs="$RUNS"
       - name: Archive editor workflow evidence
+        id: archive-editor
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: editor-${{ matrix.environment }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/editor-${{ matrix.environment }}/
           retention-days: 30
           if-no-files-found: error
+      - name: Retry editor evidence upload
+        if: ${{ !cancelled() && steps.archive-editor.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: editor-${{ matrix.environment }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/editor-${{ matrix.environment }}/
+          retention-days: 30
+          if-no-files-found: error
+          overwrite: true
   publish:
     name: Archive history and build dashboard
     needs: [quality-gate, collect, editor-collect]
