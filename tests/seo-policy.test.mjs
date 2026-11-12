@@ -89,13 +89,15 @@ test('policy status and batch history retain explanatory raw scores in both loca
   }
 });
 test('config only permits an explicit supported policy', () => {
-  assert.equal(config.routes.find(route => route.id === 'editor').seoPolicy, 'noindex');
-  assert.equal(config.routes.find(route => route.id === 'tools').seoPolicy, 'noindex');
+  assert.equal(config.routes.find(route => route.id === 'editor').seoPolicy, undefined);
+  assert.equal(config.routes.find(route => route.id === 'tools').seoPolicy, undefined);
   const invalid = structuredClone(config); invalid.routes[0].seoPolicy = 'ignore-seo';
   assert.throws(() => validateConfig(invalid), /SEO policy/);
 });
 test('collection persists per-repeat directive evidence and retains the original Lighthouse score', async () => {
-  const plan = selectPlan(config, { environment: 'staging', routes: 'editor', runs: 3 });
+  const historicalConfig = structuredClone(config);
+  historicalConfig.routes.find(route => route.id === 'editor').seoPolicy = 'noindex';
+  const plan = selectPlan(historicalConfig, { environment: 'staging', routes: 'editor', runs: 3 });
   const summary = await runCollection({ config, plan, metadata: { id: 'policy-test' }, audit: async url => ({ lhr: lhr(url) }), saveReport: async () => {} });
   const entry = summary.routes[0];
   assert.equal(entry.successCount, 3);
@@ -104,6 +106,27 @@ test('collection persists per-repeat directive evidence and retains the original
   assert.equal(entry.seoAssessment.noindexConfirmed, true);
   assert.equal(entry.samples[0].seoAssessment.evidence.length, 1);
   assert.equal(entry.status, 'pass');
+});
+
+test('tools and editor use the unadjusted SEO score after becoming indexable', async () => {
+  for (const seo of [.66, 1]) {
+    const plan = selectPlan(config, { environment: 'staging', routes: 'tools,editor', runs: 3 });
+    const summary = await runCollection({ config, plan, metadata: { id: 'public-workspaces' }, audit: async url => {
+      const report = lhr(url); report.categories.seo.score = seo;
+      if (seo === 1) report.audits['is-crawlable'] = { score: 1 };
+      return { lhr: report };
+    }, saveReport: async () => {} });
+    assert.equal(summary.routes.length, 2);
+    for (const entry of summary.routes) {
+      assert.equal(entry.metrics.seo, Math.round(seo * 100));
+      assert.equal(entry.seoPolicy, undefined);
+      assert.equal(entry.seoAssessment, undefined);
+      assert.equal(entry.status, seo === 1 ? 'pass' : 'critical');
+      const state = routeStates(entry, config).quality;
+      assert.equal(state.notes, undefined);
+      if (seo !== 1) assert.equal(state.issues[0].key, 'seo');
+    }
+  }
 });
 
 test('published dashboard data retains policy evidence and raw scores after compacting samples', async t => {
