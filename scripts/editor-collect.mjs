@@ -4,6 +4,7 @@ import os from 'node:os';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { hash, selectPlan } from './lib.mjs';
 import { runEditorScenario } from './editor-scenario.mjs';
+import { saveEditorExport } from './editor-evidence.mjs';
 import { summarizeEditor, validateEditorConfig } from '../web/editor-model.mjs';
 import { renderEditorReport } from '../web/editor-view.mjs';
 
@@ -35,6 +36,15 @@ try {
       await page.setViewport({ width: 1350, height: 940, deviceScaleFactor: 1 });
       await page.setCacheEnabled(false);
       const result = await runEditorScenario(page, { url: new URL(editorConfig.path, plan.origin).href, fixturePath, config: editorConfig });
+      if (result.detail?.export) {
+        try {
+          const file = `run-${index}-export.mp4`;
+          await saveEditorExport(page, path.join(output, file), result.detail.export.bytes);
+          result.detail.export.file = file;
+        } catch (error) {
+          result.failures.push({ stage: 'export-evidence', message: String(error.message).slice(0, 1000) });
+        }
+      }
       renderer ??= await page.evaluate(() => {
         const gl = document.createElement('canvas').getContext('webgl');
         const extension = gl?.getExtension('WEBGL_debug_renderer_info');
