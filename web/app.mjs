@@ -1,7 +1,7 @@
 import { translate } from './i18n.mjs';
 import { renderEditorDashboard } from './editor-view.mjs';
 import { routesForEnvironment } from './routes.mjs';
-import { routeStates, batchStates } from './budgets.mjs';
+import { routeStates, batchStates, statusGroups } from './budgets.mjs';
 import { renderGroupState, renderStatusGroups } from './status.mjs';
 import { latestForRoute, seriesFor, artifactAvailable, dataPresentation, escapeHtml as h } from './model.mjs';
 import { devices, summaryDevice, profileForDevice } from './devices.mjs';
@@ -90,7 +90,7 @@ function render() {
   $('selected-status').innerHTML = renderStatusGroups(routeStates(latest?.route, budgets), state.locale);
   const metricNames = ['performance', 'lcpMs', 'cls', 'tbtMs'];
   $('metrics').innerHTML = metricNames.map(key => `<div class="metric"><span>${h(t(key))}</span><strong>${fmt(latest?.route.metrics[key], key)}<small>${h(units(key))}</small></strong><span class="meta">${h(t('budget'))} ${['lcpMs', 'cls', 'tbtMs'].includes(key) ? '≤' : '≥'} ${fmt(budgets.targets?.[key], key)}</span></div>`).join('');
-  $('categories').innerHTML = ['accessibility', 'bestPractices', 'seo'].map(key => `<span>${h(t(key))} <strong>${fmt(latest?.route.metrics[key], key)}</strong><small>${h(t('budget'))} ≥${fmt(budgets.targets?.[key], key)}</small></span>`).join('');
+  $('categories').innerHTML = statusGroups.quality.map(key => `<span>${h(t(key))} <strong>${fmt(latest?.route.metrics[key], key)}</strong><small>${h(t('budget'))} ≥${fmt(budgets.targets?.[key], key)}</small></span>`).join('');
   $('periods').innerHTML = [[7, 'sevenDays'], [30, 'thirtyDays'], [90, 'ninetyDays'], [0, 'allTime']].map(([value, key]) => button(value, t(key), state.days === value, 'data-days')).join('');
   $('metric-buttons').innerHTML = metricNames.map(key => button(key, t(key), state.metric === key, 'data-metric')).join('');
   const points = seriesFor(summaries, state.environment, state.route, state.metric, state.days, Date.now(), state.device);

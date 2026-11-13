@@ -69,6 +69,15 @@ test('configuration prevents invalid targets, duplicate routes and inverted budg
   const crossOrigin = structuredClone(config); crossOrigin.routes[0].path = '//example.com'; assert.throws(() => validateConfig(crossOrigin));
   const inverted = structuredClone(config); inverted.critical.lcpMs = 1; assert.throws(() => validateConfig(inverted));
 });
+test('configuration budgets require assessed metrics and omit best practices', () => {
+  assert.equal(Object.hasOwn(config.targets, 'bestPractices'), false);
+  assert.equal(Object.hasOwn(config.critical, 'bestPractices'), false);
+  assert.equal(validateConfig(config), config);
+  for (const key of ['performance', 'accessibility', 'seo', 'lcpMs', 'cls', 'tbtMs']) {
+    const invalid = structuredClone(config); delete invalid.targets[key];
+    assert.throws(() => validateConfig(invalid), /Invalid performance budget/);
+  }
+});
 test('medians handle empty, non-finite and even samples without inventing zero', () => {
   assert.equal(median([]), null); assert.equal(median([NaN, Infinity]), null); assert.equal(median([4, 1, 2]), 2); assert.equal(median([0, 3]), 1.5);
 });
@@ -86,6 +95,16 @@ test('partial and completely failed collections cannot pass or become zero score
 });
 test('successful Lighthouse extraction accepts valid zero-valued CLS and TBT', () => {
   const result = extractResult(lhr(), 'https://vidma.ai/zh/'); assert.equal(result.metrics.cls, 0); assert.equal(result.metrics.tbtMs, 0);
+});
+test('best-practices diagnostics remain available without being required for a valid sample', () => {
+  for (const score of [0, .77, null, undefined]) {
+    const report = lhr();
+    if (score === undefined) delete report.categories['best-practices'];
+    else report.categories['best-practices'].score = score;
+    const result = extractResult(report, 'https://vidma.ai/zh/');
+    assert.equal(result.metrics.bestPractices, typeof score === 'number' ? Math.round(score * 100) : null);
+    assert.equal(summarizeRoute(config.routes[0], [{ ...result, report: 'sample' }], [], 1, config).status, 'pass');
+  }
 });
 test('HTTP errors, runtime errors, login redirects and missing metrics are collection failures', () => {
   assert.throws(() => extractResult(lhr({ runtimeError: { code: 'NO_FCP' } }), 'https://vidma.ai/zh/'));
@@ -222,10 +241,18 @@ test('pipeline health distinguishes a publish-only push from missing requested m
   assert.equal(pipelineHealthy({ failed: 0 }, { ...published, deploy: 'failure' }), false);
 });
 
-test('quality status includes the other Lighthouse categories even with a high performance score', () => {
+test('low best practices are retained in collected data without affecting status', () => {
   const result = summarizeRoute(config.routes[0], [{ metrics: { ...metrics, performance: 99, bestPractices: 50 }, report: 'sample' }], [], 1, config);
   assert.equal(result.metrics.performance, 99);
-  assert.equal(result.status, 'critical');
+  assert.equal(result.metrics.bestPractices, 50);
+  assert.deepEqual(result.ranges.bestPractices, { min: 50, max: 50 });
+  assert.equal(result.status, 'pass');
+});
+test('accessibility and SEO still affect status even with a high performance score', () => {
+  for (const key of ['accessibility', 'seo']) {
+    const result = summarizeRoute(config.routes[0], [{ metrics: { ...metrics, performance: 99, [key]: 50 }, report: 'sample' }], [], 1, config);
+    assert.equal(result.status, 'critical', key);
+  }
 });
 
 test('English AI ads is included in scheduled staging collection and keeps the exact supplied URL', () => {

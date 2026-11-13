@@ -1,10 +1,11 @@
 import { createHash } from 'node:crypto';
 import { routesForEnvironment } from '../web/routes.mjs';
 import { devices, profileForDevice, summaryDevice, collectionDirectory } from '../web/devices.mjs';
-import { lowerIsBetter, metricStatus, routeStates, worstStatus } from '../web/budgets.mjs';
+import { lowerIsBetter, metricStatus, routeStates, worstStatus, statusGroups } from '../web/budgets.mjs';
 import { assessSeoPolicy, summarizeSeoPolicy } from '../web/seo-policy.mjs';
 
 export const metricKeys = ['performance', 'accessibility', 'bestPractices', 'seo', 'lcpMs', 'cls', 'tbtMs'];
+const requiredMetricKeys = Object.values(statusGroups).flat();
 export { lowerIsBetter, metricStatus };
 export const hash = value => createHash('sha256').update(typeof value === 'string' || ArrayBuffer.isView(value) ? value : JSON.stringify(value)).digest('hex');
 export const median = values => {
@@ -35,7 +36,7 @@ export function validateConfig(config) {
     if (route.seoPolicy !== undefined && route.seoPolicy !== 'noindex') throw new Error('Invalid SEO policy');
     ids.add(route.id);
   }
-  for (const key of metricKeys) {
+  for (const key of requiredMetricKeys) {
     if (!Number.isFinite(config.targets[key]) || !Number.isFinite(config.critical[key])) throw new Error('Invalid performance budget');
     if (lowerIsBetter.has(key) ? config.critical[key] < config.targets[key] : config.critical[key] > config.targets[key]) throw new Error('Inverted budget');
   }
@@ -81,7 +82,7 @@ export function extractResult(lhr, expectedUrl, seoPolicy) {
     tbtMs: lhr.audits['total-blocking-time']?.numericValue ?? null,
     fcpMs: lhr.audits['first-contentful-paint']?.numericValue ?? null,
   };
-  if (metricKeys.some(key => !Number.isFinite(metrics[key]))) throw new Error('Required Lighthouse metrics are missing');
+  if (requiredMetricKeys.some(key => !Number.isFinite(metrics[key]))) throw new Error('Required Lighthouse metrics are missing');
   return { metrics, finalUrl: finalUrl.href, ...(seoPolicy ? { seoAssessment: assessSeoPolicy(lhr, seoPolicy) } : {}) };
 }
 

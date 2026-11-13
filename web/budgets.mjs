@@ -1,7 +1,7 @@
 export const lowerIsBetter = new Set(['lcpMs', 'cls', 'tbtMs']);
 export const statusGroups = {
   performance: ['performance', 'lcpMs', 'cls', 'tbtMs'],
-  quality: ['accessibility', 'bestPractices', 'seo'],
+  quality: ['accessibility', 'seo'],
 };
 
 export function metricStatus(key, value, config) {
