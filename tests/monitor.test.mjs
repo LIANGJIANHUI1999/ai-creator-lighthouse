@@ -27,7 +27,7 @@ async function temporary(t) {
 
 test('configuration selects both public deployment targets and preserves route parameters', () => {
   assert.equal(selectPlan(config, { environment: 'staging' }).origin, 'https://vidmaeditor-ios.web.app');
-  assert.equal(selectPlan(config, { routes: 'video-create,landing' }).routes[1].path, '/zh/video-create/?mode=text');
+  assert.equal(selectPlan(config, { routes: 'video-create,landing' }).routes[1].path, '/en/video-create/?mode=text');
   assert.equal(selectPlan(config).routes.length, 9);
 });
 test('public plans and protected production entry have separate targets and all Lighthouse categories', async () => {
@@ -35,7 +35,7 @@ test('public plans and protected production entry have separate targets and all 
     const id = environment === 'staging' ? 'subscribe' : 'subscribe-login';
     const plan = selectPlan(config,{environment,routes:id,runs:3});
     assert.ok(selectPlan(config,{environment}).routes.some(route => route.id === id));
-    assert.equal(plan.routes[0].path,'/zh/subscribe/');
+    assert.equal(plan.routes[0].path,'/en/subscribe/');
     assert.equal(messages.zh[plan.routes[0].labelKey],environment === 'staging' ? '套餐与支付' : '套餐登录入口');
     assert.equal(messages.en[plan.routes[0].labelKey],environment === 'staging' ? 'Plans & payment' : 'Plans sign-in entry');
     assert.throws(()=>selectPlan(config,{environment,routes:environment === 'staging' ? 'subscribe-login' : 'subscribe'}),/unavailable/);
@@ -116,7 +116,7 @@ test('HTTP errors, runtime errors, login redirects and missing metrics are colle
 });
 test('collector retries one failed attempt and preserves recovery evidence', async () => {
   let calls = 0; const saved = [];
-  const result = await runCollection({ config, plan: selectPlan(config, { routes: 'landing', runs: 1 }), metadata: summary(), audit: async () => { if (++calls === 1) throw new Error('Temporary timeout'); return { lhr: lhr() }; }, saveReport: async name => saved.push(name) });
+  const result = await runCollection({ config, plan: selectPlan(config, { routes: 'landing', runs: 1 }), metadata: summary(), audit: async url => { if (++calls === 1) throw new Error('Temporary timeout'); return { lhr: lhr({ requestedUrl: url, finalDisplayedUrl: url }) }; }, saveReport: async name => saved.push(name) });
   assert.equal(calls, 2); assert.equal(result.routes[0].status, 'pass'); assert.equal(result.routes[0].errors[0].recovered, true); assert.equal(saved.length, 1);
 });
 test('collector records exhausted retries without preventing subsequent pages', async () => {

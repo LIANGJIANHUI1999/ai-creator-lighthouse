@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "path": "/zh/editor/?benchmark=1",
+  "path": "/en/editor/?benchmark=1",
   "scenarioVersion": "editor-workflow-v1",
   "fixture": { "file": "fixtures/editor-5s.mp4", "sha256": "394c7333109c4a35d302588d6d3aac0b95c6ffd351c29e2042b7a62f65411662", "durationMs": 5000, "width": 640, "height": 360, "fps": 30 },
   "playbackSampleMs": 2000,

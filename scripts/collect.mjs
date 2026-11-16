@@ -25,7 +25,7 @@ const chromePath = process.env.CHROME_PATH;
 const chromeVersion = chromePath ? execFileSync(chromePath, ['--version'], { encoding: 'utf8' }).trim() : 'system-chrome';
 let siteSnapshot;
 try {
-  const response = await fetch(`${plan.origin}/zh/`, { signal: AbortSignal.timeout(20000) });
+  const response = await fetch(`${plan.origin}/en/`, { signal: AbortSignal.timeout(20000) });
   siteSnapshot = { url: response.url, httpStatus: response.status, htmlSha256: hash(await response.text()), etag: response.headers.get('etag'), lastModified: response.headers.get('last-modified'), sourceRevision: null };
 } catch (error) { siteSnapshot = { error: error.message, sourceRevision: null }; }
 const metadata = {

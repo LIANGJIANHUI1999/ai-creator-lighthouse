@@ -56,7 +56,7 @@ export async function runEditorScenario(page, { url, fixturePath, config, timeou
       await page.evaluate(() => {
         const video = [...document.querySelectorAll('video')].find(video => video.currentSrc && video.readyState >= 2);
         if (!video?.requestVideoFrameCallback || !video.getVideoPlaybackQuality) throw new Error('Frame timing APIs unavailable');
-        const button = document.querySelector('button[aria-label="播放"]');
+        const button = document.querySelector('button[aria-label="Play"]');
         if (!button) throw new Error('Play button unavailable');
         window.__editorBench.playResponseMs = null;
         window.__editorBench.beforeQuality = video.getVideoPlaybackQuality();
@@ -66,7 +66,7 @@ export async function runEditorScenario(page, { url, fixturePath, config, timeou
           video.requestVideoFrameCallback(() => { window.__editorBench.playResponseMs = performance.now() - start; });
         }, { once: true, capture: true });
       });
-      await page.click('button[aria-label="播放"]');
+      await page.click('button[aria-label="Play"]');
       await page.waitForFunction(() => Number.isFinite(window.__editorBench.playResponseMs), { timeout: 10000 });
       await page.waitForFunction(sampleMs => {
         const video = [...document.querySelectorAll('video')].find(video => video.currentSrc && video.readyState >= 2);
@@ -77,7 +77,7 @@ export async function runEditorScenario(page, { url, fixturePath, config, timeou
         const before = window.__editorBench.beforeQuality, after = video.getVideoPlaybackQuality();
         return { responseMs: window.__editorBench.playResponseMs, total: after.totalVideoFrames - before.totalVideoFrames, dropped: after.droppedVideoFrames - before.droppedVideoFrames };
       });
-      await page.click('button[aria-label="暂停"]');
+      await page.click('button[aria-label="Pause"]');
       if (playback.total <= 0 || playback.dropped < 0 || playback.dropped > playback.total) throw new Error('No valid playback frame sample');
       metrics.playResponseMs = playback.responseMs;
       metrics.droppedFrameRatio = playback.dropped / playback.total;
@@ -85,7 +85,7 @@ export async function runEditorScenario(page, { url, fixturePath, config, timeou
     });
     await attempt('seek', async () => {
       // Pause after a failed playback attempt too; source changes are timed to a presented frame.
-      const pause = await page.$('button[aria-label="暂停"]');
+      const pause = await page.$('button[aria-label="Pause"]');
       if (pause) await pause.click();
       await page.evaluate(() => {
         const video = [...document.querySelectorAll('video')].find(video => video.currentSrc && video.readyState >= 2);
@@ -130,7 +130,7 @@ export async function runEditorScenario(page, { url, fixturePath, config, timeou
       }, { timeout: 10000 }, config.exportTrimRatio);
       const trimResponseMs = await page.evaluate(() => window.__editorBench.trimResponseMs);
       const durationMs = await page.evaluate(() => {
-        const text = document.querySelector('input[aria-label="定位时间"]')?.parentElement?.textContent ?? '';
+        const text = document.querySelector('input[aria-label="Go to time"]')?.parentElement?.textContent ?? '';
         const match = text.match(/\/\s*(\d+):(\d+)\.(\d{3})/);
         return match ? (Number(match[1]) * 60 + Number(match[2])) * 1000 + Number(match[3]) : null;
       });
