@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { hash, runCollection, selectPlan } from './lib.mjs';
 import { batchId, collectionDirectory } from '../web/devices.mjs';
+import { loadLighthouseEngine } from './lighthouse-engine.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const config = JSON.parse(await fs.readFile(path.join(root, 'monitor.config.json'), 'utf8'));
@@ -18,9 +19,8 @@ await fs.mkdir(path.join(output, 'reports'), { recursive: true });
 const generatedAt = new Date().toISOString();
 const runId = process.env.GITHUB_RUN_ID ?? `local-${Date.now()}`;
 const runAttempt = process.env.GITHUB_RUN_ATTEMPT ?? '1';
-const { default: lighthouse } = await import('lighthouse');
+const { audit: lighthouse, version: lighthouseVersion } = await loadLighthouseEngine(plan.device);
 const { launch } = await import('chrome-launcher');
-const lighthouseVersion = JSON.parse(await fs.readFile(path.join(root, 'node_modules/lighthouse/package.json'), 'utf8')).version;
 const chromePath = process.env.CHROME_PATH;
 const chromeVersion = chromePath ? execFileSync(chromePath, ['--version'], { encoding: 'utf8' }).trim() : 'system-chrome';
 let siteSnapshot;

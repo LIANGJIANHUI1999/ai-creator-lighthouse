@@ -21,6 +21,7 @@
 - 每页 **3 次**独立匿名导航，清理浏览器缓存与站点存储；每个指标分别取中位数，并保留最小/最大值。
 - 桌面视口 1350 × 940，模拟 40ms RTT、10240Kbps 网络、CPU ×1。固定 Lighthouse、Chrome for Testing 和 Node 版本。
 - 手机端单独使用 `mobile-v1-slow4g`：Lighthouse 默认 Android UA、412 × 823 视口、DPR 1.75、模拟慢速 4G（150ms RTT / 1638.4Kbps）、CPU ×4。属于模拟手机实验室数据；手机与桌面分别展示，不作为真实手机或真实用户指标。
+- 手机采集固定使用 Lighthouse **13.6.0**，采用官方 [HTTP/2 模拟及同帧文字 LCP 修复](https://github.com/GoogleChrome/lighthouse/releases/tag/v13.6.0)。桌面仍固定 **13.4.1**；Chrome、Node、设备与节流参数及预算保持原样。工具版本进入比较标识，手机旧历史保留，新版本另起对比序列；版本校正产生的分数差异不等同于网站提速。
 - 当前配置 `desktop-v2-native-ua` 显式使用固定 Chrome 的原生桌面 UA，避免 Lighthouse 默认的移动端 UA。旧 `desktop-v1` 批次虽然用了桌面视口及评分，UA 仍为移动端；历史数据保留，但不与修正后的批次连接或做回退比较。匿名 CI、个人浏览器会话和不同语言页面也需分别比较。
 - 定时同时采集正式/测试环境的桌面与手机，共四个独立 runner；每个目标内页面串行测量。
 - 失败样本自动重试 1 次。HTTP 错误、跳转到登录页/其他路由、Lighthouse 运行错误和缺失必要指标均视为采集失败。
