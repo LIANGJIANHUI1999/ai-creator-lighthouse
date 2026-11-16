@@ -7,6 +7,7 @@ import { devices as supportedDevices, summaryDevice, profileForDevice, batchId, 
 export function mergeHistory(history, incoming) {
   const result = new Map(history.map(summary => [summary.id, summary]));
   for (const summary of incoming) {
+    if (summary.diagnostic !== undefined && summary.diagnostic !== false) throw new Error('Diagnostic measurements must not enter metric history');
     if (!/^[a-zA-Z0-9-]+$/.test(summary.id) || summary.schemaVersion !== 1 || !Array.isArray(summary.routes)) throw new Error('Invalid summary');
     if (!result.has(summary.id)) {
       for (const route of summary.routes) route.regressions = regression(route, comparableBaseline([...result.values()], summary, route.id));

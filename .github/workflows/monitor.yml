@@ -34,6 +34,10 @@ on:
         type: choice
         options: ['3', '1', '5']
         default: '3'
+      diagnostics:
+        description: Staging mobile CPU trace only; never publish to dashboard
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -67,11 +71,13 @@ jobs:
           RUNS: ${{ inputs.runs || '3' }}
           SUITE: ${{ inputs.suite || 'all' }}
           DEVICE: ${{ inputs.device || 'all' }}
+          DIAGNOSTICS: ${{ inputs.diagnostics && '1' || '0' }}
         run: |
           node --input-type=module <<'JS'
           import fs from 'node:fs';
           import { collectionMatrix } from './scripts/lib.mjs';
           const config = JSON.parse(fs.readFileSync('monitor.config.json', 'utf8'));
+          if (process.env.DIAGNOSTICS === '1' && (process.env.SUITE !== 'lighthouse' || process.env.TARGET !== 'staging' || process.env.DEVICE !== 'mobile')) throw new Error('Diagnostics require lighthouse, staging and mobile');
           if (process.env.SUITE === 'editor' && process.env.ROUTES) throw new Error('routes is only used for Lighthouse; leave empty for suite=editor');
           if (process.env.SUITE === 'editor' && process.env.DEVICE === 'mobile') throw new Error('Editor workflow is desktop-only; choose device=desktop or all');
           const matrix = collectionMatrix(config, { environment: process.env.TARGET, device: process.env.SUITE === 'editor' ? 'desktop' : process.env.DEVICE, routes: process.env.SUITE === 'editor' ? '' : process.env.ROUTES, runs: process.env.RUNS });
@@ -109,6 +115,7 @@ jobs:
           ROUTES: ${{ inputs.routes || '' }}
           RUNS: ${{ inputs.runs || '3' }}
           DEVICE: ${{ matrix.device }}
+          LIGHTHOUSE_DIAGNOSTICS: ${{ inputs.diagnostics && '1' || '0' }}
         run: pnpm collect --environment="$TARGET" --device="$DEVICE" --routes="$ROUTES" --runs="$RUNS"
       - name: Archive full reports
         id: archive-reports
@@ -190,7 +197,7 @@ jobs:
   publish:
     name: Archive history and build dashboard
     needs: [quality-gate, collect, editor-collect]
-    if: ${{ always() && !cancelled() && github.event_name != 'pull_request' && needs.quality-gate.result == 'success' }}
+    if: ${{ always() && !cancelled() && !inputs.diagnostics && github.event_name != 'pull_request' && needs.quality-gate.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -292,7 +299,7 @@ jobs:
   collection-health:
     name: Collection health
     needs: [quality-gate, collect, editor-collect, publish, deploy]
-    if: ${{ always() && !cancelled() && github.event_name != 'pull_request' && needs.quality-gate.result == 'success' }}
+    if: ${{ always() && !cancelled() && !inputs.diagnostics && github.event_name != 'pull_request' && needs.quality-gate.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:

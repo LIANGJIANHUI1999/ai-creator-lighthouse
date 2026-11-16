@@ -36,6 +36,7 @@ GitHub schedule 只从默认分支触发，可能延迟或丢弃高负载时的�
 2. `routes`：留空测全部；也可填写 `landing,home` 等页面 ID。
 3. `runs`：默认 `3`；支持 `1`、`5`。
 4. `device`：默认 `all` 同时测桌面和手机；可选择 `desktop` 或 `mobile` 单独测量。此选项用于 Lighthouse 页面采集。
+5. `diagnostics`：默认关闭。仅供 `suite=lighthouse`、`environment=staging`、`device=mobile` 排查 CPU 长任务，额外保存压缩的 Chrome CPU 轨迹与网络日志。诊断批次使用独立标记，不写入指标历史、不发布看板；正常采集和评分配置保持原样。
 
 页面 ID：`landing`、`home`、`ai-video`、`video-create`、`image-create`、`tools`、`clothes-transfer`、`editor`；测试环境另有 `subscribe`、`ai-ads-en`，正式环境另有 `subscribe-login`。
 
