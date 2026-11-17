@@ -21,10 +21,11 @@ for (const environment of ['production', 'staging']) for (const device of ['desk
     const result = await runCollection({ config, plan, metadata: {}, saveReport: async () => {}, audit: url => { visited.push(url); return audit(url); } });
     assert.equal(result.routes.every(route => route.successCount === 1), true);
     assert.equal(visited.length, plan.routes.length);
-    for (const address of visited) {
+    for (const [index, address] of visited.entries()) {
       const url = new URL(address);
       assert.equal(url.origin, config.environments[environment].origin);
-      assert.ok(url.pathname.startsWith('/en/'), address);
+      if (plan.routes[index].id === 'landing') assert.equal(url.pathname, '/');
+      else assert.ok(url.pathname.startsWith('/en/'), address);
     }
     assert.equal(new URL(visited.find(url => url.includes('/video-create/'))).searchParams.get('mode'), 'text');
     assert.equal(plan.routes.some(route => route.id === 'ai-ads-en'), environment === 'staging');
@@ -33,7 +34,7 @@ for (const environment of ['production', 'staging']) for (const device of ['desk
 
 test('English Lighthouse batches start a separate series while retaining Chinese history', async () => {
   const legacy = structuredClone(config);
-  for (const route of legacy.routes) if (route.id !== 'ai-ads-en') route.path = route.path.replace('/en/', '/zh/');
+  for (const route of legacy.routes) if (route.id !== 'ai-ads-en') route.path = route.id === 'landing' ? '/zh/' : route.path.replace('/en/', '/zh/');
   const batches = [];
   for (const [index, settings] of [legacy, config].entries()) {
     const plan = selectPlan(settings, { routes: 'landing', runs: 1 });
@@ -45,6 +46,28 @@ test('English Lighthouse batches start a separate series while retaining Chinese
   assert.deepEqual(seriesFor(batches, 'production', 'landing', 'performance', 0).map(point => point.id), ['batch-1']);
   assert.equal(batches[0].routes[0].path, '/zh/');
 });
+
+for (const environment of ['production', 'staging']) for (const device of ['desktop', 'mobile']) {
+  test(`${environment}/${device} separates the canonical homepage from existing alias history`, async () => {
+    const legacy = structuredClone(config);
+    legacy.routes.find(route => route.id === 'landing').path = '/en/';
+    const batches = [];
+    for (const [index, settings] of [legacy, config].entries()) {
+      const plan = selectPlan(settings, { environment, device, routes: 'landing', runs: 3 });
+      const comparisonKey = hash({ profile: plan.profile, routes: settings.routes });
+      batches.push(await runCollection({ config: settings, plan, audit, saveReport: async () => {}, metadata: { id: `homepage-${index}`, generatedAt: `2026-11-${16 + index}T01:00:00Z`, comparisonKey } }));
+    }
+    const oldBytes = JSON.stringify(batches[0]);
+    assert.equal(batches[0].routes[0].path, '/en/');
+    assert.equal(batches[1].routes[0].path, '/');
+    assert.equal(batches[1].routes[0].successCount, 3);
+    assert.equal(batches[1].routes[0].samples.every(sample => sample.finalUrl === `${config.environments[environment].origin}/`), true);
+    assert.notEqual(batches[0].comparisonKey, batches[1].comparisonKey);
+    assert.equal(comparableBaseline([batches[0]], batches[1], 'landing'), null);
+    assert.deepEqual(seriesFor(batches, environment, 'landing', 'seo', 0, Date.now(), device).map(point => point.id), ['homepage-1']);
+    assert.equal(JSON.stringify(batches[0]), oldBytes);
+  });
+}
 
 test('the isolated English editor URL starts a new benchmark comparison series', () => {
   validateEditorConfig(editorConfig);

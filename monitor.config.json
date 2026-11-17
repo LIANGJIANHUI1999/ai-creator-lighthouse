@@ -30,7 +30,7 @@
     "maxWaitForLoad": 45000
   },
   "routes": [
-    { "id": "landing", "labelKey": "landing", "path": "/en/" },
+    { "id": "landing", "labelKey": "landing", "path": "/" },
     { "id": "home", "labelKey": "home", "path": "/en/home/" },
     { "id": "subscribe", "labelKey": "subscribe", "path": "/en/subscribe/", "environments": ["staging"] },
     { "id": "subscribe-login", "labelKey": "subscribeLogin", "path": "/en/subscribe/", "environments": ["production"] },
