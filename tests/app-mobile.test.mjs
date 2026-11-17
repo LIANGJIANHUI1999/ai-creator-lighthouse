@@ -48,3 +48,23 @@ test('a dashboard with only mobile measurements remains visible and uses its sha
  assert.equal(h.element('dashboard').hidden,false);assert.equal(h.element('load-status').hidden,true);
  assert.match(h.element('metrics').innerHTML,/>65<small>/);assert.match(h.element('device-profile').textContent,/手机端/);
 });
+
+for (const locale of ['zh', 'en']) test(`signed-out account coverage is explicit across devices and environment switches (${locale})`, async t => {
+ const records = ['desktop', 'mobile'].map(device => {
+  const summary = batch(device, 98, `account-${device}`); summary.environment = 'staging';
+  summary.routes = ['orders-login', 'credits-login'].map(id => ({ ...summary.routes[0], ...config.routes.find(route => route.id === id) }));
+  return summary;
+ });
+ const h = await harness(t, { schemaVersion: 1, config, summaries: [records[0]], summariesByDevice: { desktop: [records[0]], mobile: [records[1]] }, reports: {} }, `?env=staging&page=orders-login&lang=${locale}`, `account-${locale}`);
+ const note = locale === 'zh' ? /仅测量未登录.*不代表登录后的订单/ : /signed-out sign-in entry only.*not authenticated orders/;
+ assert.equal(h.element('selected-scope').hidden, false); assert.match(h.element('selected-scope').textContent, note);
+ assert.match(h.element('selected-page').textContent, locale === 'zh' ? /订单.*未登录/ : /Orders.*signed out/);
+ assert.equal(h.element('site-link').href, 'https://vidmaeditor-ios.web.app/en/account/orders/');
+ assert.match(h.element('overview').innerHTML, locale === 'zh' ? /积分记录（未登录入口）/ : /Credits \(signed out\)/);
+ h.press({ device: 'mobile' }); assert.equal(h.element('selected-scope').hidden, false); assert.match(h.element('selected-scope').textContent, note);
+ h.press({ route: 'credits-login' }); assert.equal(h.element('selected-scope').hidden, false); assert.equal(h.element('site-link').href, 'https://vidmaeditor-ios.web.app/en/account/credits/');
+ h.press({ route: 'asset' }); assert.equal(h.element('selected-scope').hidden, true); assert.equal(h.element('selected-scope').textContent, '');
+ h.press({ env: 'production' });
+ for (const id of ['orders-login', 'credits-login', 'asset', 'ai-sprite', 'image-edit', 'subtitle-translation']) assert.doesNotMatch(h.element('routes').innerHTML, new RegExp(`data-route="${id}"`));
+ assert.equal(h.element('selected-scope').hidden, true); assert.equal(h.element('site-link').href, 'https://vidma.ai/');
+});

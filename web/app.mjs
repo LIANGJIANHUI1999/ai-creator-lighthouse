@@ -87,6 +87,9 @@ function render() {
   $('selected-page').textContent = t(selected.labelKey);
   $('site-link').textContent = `${environment.origin}${selected.path}`;
   $('site-link').href = `${environment.origin}${selected.path}`;
+  const signInEntry = (latest?.route.measurementScope ?? selected.measurementScope) === 'sign-in-entry';
+  $('selected-scope').textContent = signInEntry ? t('signInEntryScope') : '';
+  $('selected-scope').hidden = !signInEntry;
   $('selected-status').innerHTML = renderStatusGroups(routeStates(latest?.route, budgets), state.locale);
   const metricNames = ['performance', 'lcpMs', 'cls', 'tbtMs'];
   $('metrics').innerHTML = metricNames.map(key => `<div class="metric"><span>${h(t(key))}</span><strong>${fmt(latest?.route.metrics[key], key)}<small>${h(units(key))}</small></strong><span class="meta">${h(t('budget'))} ${['lcpMs', 'cls', 'tbtMs'].includes(key) ? '≤' : '≥'} ${fmt(budgets.targets?.[key], key)}</span></div>`).join('');

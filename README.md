@@ -13,11 +13,40 @@
 | 正式环境 `production` | https://vidma.ai |
 | 测试环境 `staging` | https://vidmaeditor-ios.web.app |
 
-默认测量英文官网规范首页 `/`、工作台、套餐与支付入口 `/en/subscribe/`、短剧创作、视频创作、图片创作、工具中心、AI 换装、编辑器，共 9 个页面入口。测试环境额外覆盖英文广告创作页 `/en/ai-ads/`（看板名称“AI 广告（英文）”，ID `ai-ads-en`），因此正式环境测 9 页，测试环境测 10 页；全部采集目标均为英文页面，除首页使用规范入口 `/` 外，其余路径保留 `/en/` 前缀。配置集中在 `monitor.config.json`，源自业务项目原有 Lighthouse 桌面端配置。
+默认测量英文官网规范首页 `/`、工作台、套餐与支付入口 `/en/subscribe/`、短剧创作、视频创作、图片创作、工具中心、AI 换装、编辑器，共 9 个页面入口。测试环境额外覆盖英文广告创作页 `/en/ai-ads/`（看板名称“AI 广告（英文）”，ID `ai-ads-en`），因此正式环境测 9 页；测试环境在这 10 页基础上新增下列 14 个英文入口，共测 24 页；全部采集目标均为英文页面，除首页使用规范入口 `/` 外，其余路径保留 `/en/` 前缀。配置集中在 `monitor.config.json`，源自业务项目原有 Lighthouse 桌面端配置。
 
 首页的 `/en/` 别名与 `/` 展示相同内容，canonical 指向 `/`。首页采集改用 `/`，避免 Lighthouse 将别名指向根路径的 canonical 判为无效；网站内容和 canonical 设置不变。入口变化会开启新的比较序列，旧 `/en/` 报告和指标保留，不能将两种入口的分数变化解释为网页优化收益。
 
 测试环境 `/en/subscribe/` 可匿名展示完整套餐，ID 为 `subscribe`。正式环境当前会显示登录弹窗，单独以 `subscribe-login`（套餐登录入口）采集；该成绩仅代表登录入口，不代表登录后套餐或 Stripe 表单性能，两种状态不会合并趋势。正式环境开放匿名套餐后应重新确认页面内容再调整监控目标。采集只加载页面，不创建订单或提交付款。
+
+### 测试环境新增英文入口
+
+以下页面只加入 `staging`，同时用于桌面和手机采集，每页每种设备默认 3 次。新增目标自动接入既有定时任务，不改变正式环境、工具版本、设备条件或性能预算。
+
+| ID | 英文入口 | 采集范围 |
+| --- | --- | --- |
+| `asset` | `/en/asset/` | 匿名素材库入口；不代表登录后的个人素材列表 |
+| `ai-sprite` | `/en/video-to-sprite/` | AI Sprite 创作首屏 |
+| `orders-login` | `/en/account/orders/` | **未登录入口**，不代表订单、订阅或付款内容 |
+| `credits-login` | `/en/account/credits/` | **未登录入口**，不代表登录后的积分账单 |
+| `image-edit` | `/en/tools/image-edit/` | 图片编辑首屏 |
+| `character-sheet` | `/en/tools/character-sheet/` | 角色参考图首屏 |
+| `portrait-edit` | `/en/tools/portrait-edit/` | 人像编辑首屏 |
+| `bust-enhancer` | `/en/tools/bust-enhancer/` | 胸部增强首屏 |
+| `face-swap` | `/en/tools/face-swap/` | 换脸首屏 |
+| `logo-generator` | `/en/tools/ai-logo-generator/` | Logo 生成首屏 |
+| `video-compress` | `/en/tools/video-compress/` | 视频压缩首屏 |
+| `video-to-sprite` | `/en/tools/video-to-sprite/` | 本地视频转精灵图工具首屏 |
+| `subtitles` | `/en/tools/subtitles/` | 自动字幕首屏 |
+| `subtitle-translation` | `/en/tools/subtitle-translation/` | 字幕翻译首屏 |
+
+AI Sprite 创作与本地视频转精灵图是两个独立页面，分别采集。订单和积分使用独立 ID、名称和 `measurementScope: "sign-in-entry"` 元数据；看板切换到这两页时明确提示仅测未登录入口。匿名浏览器不注入登录信息，不读取账单，不下单、不生成素材。
+
+素材库和订单入口保留现有 `noindex`，使用已有 `seoPolicy: "noindex"` 核验指令和其余 SEO 审计；原始报告和 SEO 总分完整保留。积分入口未声明该策略，直接使用原始 SEO 审计，不为分数修改网站的索引设置。
+
+新增清单进入配置比较标识，旧批次和下载报告保留，不改写历史。模板页、已停用页面、模型预览和 `/en/checkout/` 兼容跳转入口未加入本批；真实付款流程需要另设专用测试账号和私有报告。
+
+### 采集条件与定时任务
 
 - 北京时间每天 **09:17、21:17** 采集两个环境；cron 使用 UTC `17 1,13 * * *`。
 - 每页 **3 次**独立匿名导航，清理浏览器缓存与站点存储；每个指标分别取中位数，并保留最小/最大值。
@@ -40,7 +69,7 @@ GitHub schedule 只从默认分支触发，可能延迟或丢弃高负载时的�
 3. `runs`：默认 `3`；支持 `1`、`5`。
 4. `device`：默认 `all` 同时测桌面和手机；可选择 `desktop` 或 `mobile` 单独测量。此选项用于 Lighthouse 页面采集。
 
-页面 ID：`landing`、`home`、`ai-video`、`video-create`、`image-create`、`tools`、`clothes-transfer`、`editor`；测试环境另有 `subscribe`、`ai-ads-en`，正式环境另有 `subscribe-login`。
+页面 ID：`landing`、`home`、`ai-video`、`video-create`、`image-create`、`tools`、`clothes-transfer`、`editor`；测试环境另有 `subscribe`、`ai-ads-en` 及上表 14 个 ID，正式环境另有 `subscribe-login`。
 
 英文广告页可选择 `environment=staging`、`routes=ai-ads-en`、`runs=3` 单独采集。路由的可选 `environments` 配置用于限制采集与看板展示范围；手动选择不适用的环境会在采集前明确拒绝。
 
@@ -97,7 +126,7 @@ GitHub schedule 只从默认分支触发，可能延迟或丢弃高负载时的�
 - **下载完整报告 ZIP：** 包含该环境所有采样和重试生成的原始 HTML/JSON，以及 `summary.json`。通过 Actions Artifact 保存 **30 天**，下载需登录 GitHub。到期后看板明确提示；历史指标仍保留。
 - 最新逐页报告随 Pages 站点发布，不将完整原始报告提交到 Git 历史。只测一个环境或部分页面时，发布过程从未过期的既有 Artifact 恢复其余页面最近的代表报告；无法恢复时保留指标与批次下载信息，不伪造报告入口。
 
-仓库和看板公开，只采集匿名公开页面。若以后要加入登录态测量，需先调整报告的访问和存储方案。
+仓库和看板公开，只采集匿名可见内容。订单和积分仅采集明确标注的未登录入口；若以后要测登录后的页面，需使用专用测试账号并先调整报告的访问和存储方案。
 
 ## 工作流与数据
 

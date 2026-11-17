@@ -40,7 +40,21 @@
     { "id": "tools", "labelKey": "tools", "path": "/en/tools/" },
     { "id": "clothes-transfer", "labelKey": "clothesTransfer", "path": "/en/tools/clothes-transfer/" },
     { "id": "editor", "labelKey": "editor", "path": "/en/editor/" },
-    { "id": "ai-ads-en", "labelKey": "aiAdsEn", "path": "/en/ai-ads/", "environments": ["staging"] }
+    { "id": "ai-ads-en", "labelKey": "aiAdsEn", "path": "/en/ai-ads/", "environments": ["staging"] },
+    {"id": "asset", "labelKey": "asset", "path": "/en/asset/", "environments": ["staging"], "seoPolicy": "noindex"},
+    {"id": "ai-sprite", "labelKey": "aiSprite", "path": "/en/video-to-sprite/", "environments": ["staging"]},
+    {"id": "orders-login", "labelKey": "ordersLogin", "path": "/en/account/orders/", "environments": ["staging"], "seoPolicy": "noindex", "measurementScope": "sign-in-entry"},
+    {"id": "credits-login", "labelKey": "creditsLogin", "path": "/en/account/credits/", "environments": ["staging"], "measurementScope": "sign-in-entry"},
+    {"id": "image-edit", "labelKey": "imageEdit", "path": "/en/tools/image-edit/", "environments": ["staging"]},
+    {"id": "character-sheet", "labelKey": "characterSheet", "path": "/en/tools/character-sheet/", "environments": ["staging"]},
+    {"id": "portrait-edit", "labelKey": "portraitEdit", "path": "/en/tools/portrait-edit/", "environments": ["staging"]},
+    {"id": "bust-enhancer", "labelKey": "bustEnhancer", "path": "/en/tools/bust-enhancer/", "environments": ["staging"]},
+    {"id": "face-swap", "labelKey": "faceSwap", "path": "/en/tools/face-swap/", "environments": ["staging"]},
+    {"id": "logo-generator", "labelKey": "logoGenerator", "path": "/en/tools/ai-logo-generator/", "environments": ["staging"]},
+    {"id": "video-compress", "labelKey": "videoCompress", "path": "/en/tools/video-compress/", "environments": ["staging"]},
+    {"id": "video-to-sprite", "labelKey": "videoToSprite", "path": "/en/tools/video-to-sprite/", "environments": ["staging"]},
+    {"id": "subtitles", "labelKey": "subtitles", "path": "/en/tools/subtitles/", "environments": ["staging"]},
+    {"id": "subtitle-translation", "labelKey": "subtitleTranslation", "path": "/en/tools/subtitle-translation/", "environments": ["staging"]}
   ],
   "targets": { "performance": 90, "accessibility": 100, "seo": 95, "lcpMs": 2500, "cls": 0.1, "tbtMs": 200 },
   "critical": { "performance": 70, "accessibility": 90, "seo": 85, "lcpMs": 4000, "cls": 0.25, "tbtMs": 600 }

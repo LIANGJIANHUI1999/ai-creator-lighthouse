@@ -34,6 +34,7 @@ export function validateConfig(config) {
     if (new URL(route.path, 'https://example.com').origin !== 'https://example.com') throw new Error('Cross-origin route');
     if (route.environments !== undefined && (!Array.isArray(route.environments) || !route.environments.length || new Set(route.environments).size !== route.environments.length || route.environments.some(environment => !Object.hasOwn(config.environments, environment)))) throw new Error('Invalid route environment scope');
     if (route.seoPolicy !== undefined && route.seoPolicy !== 'noindex') throw new Error('Invalid SEO policy');
+    if (route.measurementScope !== undefined && route.measurementScope !== 'sign-in-entry') throw new Error('Invalid measurement scope');
     ids.add(route.id);
   }
   for (const key of requiredMetricKeys) {

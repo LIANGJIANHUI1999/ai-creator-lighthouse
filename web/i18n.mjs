@@ -1,5 +1,8 @@
 export const messages = {
   zh: {
+    asset: '素材库', aiSprite: 'AI Sprite 创作', ordersLogin: '订单与订阅（未登录入口）', creditsLogin: '积分记录（未登录入口）',
+    imageEdit: '图片编辑', characterSheet: '角色参考图', portraitEdit: '人像编辑', bustEnhancer: '胸部增强', faceSwap: 'AI 换脸', logoGenerator: 'Logo 生成', videoCompress: '视频压缩', videoToSprite: '视频转精灵图', subtitles: '自动字幕', subtitleTranslation: '字幕翻译',
+    signInEntryScope: '仅测量未登录时的登录入口，不代表登录后的订单、积分数据或实际付款性能。',
     desktop: '桌面端', mobile: '手机端', deviceFilter: '选择测量设备', measurementProfile: '设备与测量配置', network: '模拟网络', cpu: 'CPU 倍率', mobileLabNote: 'Lighthouse 模拟手机与慢速 4G；仅与同口径手机记录比较。',
     expectedNoindex: '按预期禁止收录', rawSeo: 'SEO 原始分', seoOtherAudits: '其余 SEO 最低分', seoPolicyMissing: '缺少完整索引策略证据，请重新采集', seoPolicyMismatch: '应禁止收录，但未确认到 noindex 指令', subscribeLogin: '套餐登录入口',
     pageLighthouse: '页面 Lighthouse', editorView: '编辑器实操', benchmarkView: '监测类型', editorBenchmark: '编辑器实操基准', editorMetric: '操作指标', editorMedian: '中位数', countUnit: '个',
@@ -25,6 +28,9 @@ export const messages = {
     language: '切换语言', refresh: '刷新记录', sampleRange: '本批波动范围', runLink: '查看运行', versionChanged: '口径变更会开启新的对比序列。',
   },
   en: {
+    asset: 'Assets', aiSprite: 'AI Sprite creation', ordersLogin: 'Orders & subscription (signed out)', creditsLogin: 'Credits (signed out)',
+    imageEdit: 'Image editing', characterSheet: 'Character reference sheet', portraitEdit: 'Portrait editing', bustEnhancer: 'Bust enhancement', faceSwap: 'Face swap', logoGenerator: 'Logo generation', videoCompress: 'Video compression', videoToSprite: 'Video to sprite', subtitles: 'Automatic subtitles', subtitleTranslation: 'Subtitle translation',
+    signInEntryScope: 'Measures the signed-out sign-in entry only, not authenticated orders, credit data or actual payment performance.',
     desktop: 'Desktop', mobile: 'Mobile', deviceFilter: 'Select measurement device', measurementProfile: 'Device and measurement profile', network: 'Simulated network', cpu: 'CPU slowdown', mobileLabNote: 'Lighthouse phone emulation with slow 4G; compare only with matching mobile measurements.',
     expectedNoindex: 'Intentionally not indexed', rawSeo: 'Raw SEO score', seoOtherAudits: 'Other SEO minimum score', seoPolicyMissing: 'Complete indexing-policy evidence is missing; collect again', seoPolicyMismatch: 'Expected noindex directive was not confirmed', subscribeLogin: 'Plans sign-in entry',
     pageLighthouse: 'Page Lighthouse', editorView: 'Editor benchmark', benchmarkView: 'Measurement type', editorBenchmark: 'Editor workflow benchmark', editorMetric: 'Operation metric', editorMedian: 'Median', countUnit: 'count',
