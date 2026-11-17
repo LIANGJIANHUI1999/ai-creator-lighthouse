@@ -13,7 +13,7 @@
 | 正式环境 `production` | https://vidma.ai |
 | 测试环境 `staging` | https://vidmaeditor-ios.web.app |
 
-默认测量英文官网规范首页 `/`、工作台、套餐与支付入口 `/en/subscribe/`、短剧创作、视频创作、图片创作、工具中心、AI 换装、编辑器，共 9 个页面入口。测试环境额外覆盖英文广告创作页 `/en/ai-ads/`（看板名称“AI 广告（英文）”，ID `ai-ads-en`），因此正式环境测 9 页；测试环境在这 10 页基础上新增下列 14 个英文入口，共测 24 页；全部采集目标均为英文页面，除首页使用规范入口 `/` 外，其余路径保留 `/en/` 前缀。配置集中在 `monitor.config.json`，源自业务项目原有 Lighthouse 桌面端配置。
+默认测量英文官网规范首页 `/`、工作台、套餐与支付入口 `/en/subscribe/`、短剧创作、视频创作、图片创作、工具中心、AI 换装、编辑器，共 9 个页面入口。测试环境额外覆盖英文广告创作页 `/en/ai-ads/`（看板名称“AI 广告（英文）”，ID `ai-ads-en`），因此正式环境测 9 页；测试环境在这 10 页基础上额外保留下列 12 个英文入口，共测 22 页；全部采集目标均为英文页面，除首页使用规范入口 `/` 外，其余路径保留 `/en/` 前缀。配置集中在 `monitor.config.json`，源自业务项目原有 Lighthouse 桌面端配置。
 
 首页的 `/en/` 别名与 `/` 展示相同内容，canonical 指向 `/`。首页采集改用 `/`，避免 Lighthouse 将别名指向根路径的 canonical 判为无效；网站内容和 canonical 设置不变。入口变化会开启新的比较序列，旧 `/en/` 报告和指标保留，不能将两种入口的分数变化解释为网页优化收益。
 
@@ -27,8 +27,6 @@
 | --- | --- | --- |
 | `asset` | `/en/asset/` | 匿名素材库入口；不代表登录后的个人素材列表 |
 | `ai-sprite` | `/en/video-to-sprite/` | AI Sprite 创作首屏 |
-| `orders-login` | `/en/account/orders/` | **未登录入口**，不代表订单、订阅或付款内容 |
-| `credits-login` | `/en/account/credits/` | **未登录入口**，不代表登录后的积分账单 |
 | `image-edit` | `/en/tools/image-edit/` | 图片编辑首屏 |
 | `character-sheet` | `/en/tools/character-sheet/` | 角色参考图首屏 |
 | `portrait-edit` | `/en/tools/portrait-edit/` | 人像编辑首屏 |
@@ -40,9 +38,11 @@
 | `subtitles` | `/en/tools/subtitles/` | 自动字幕首屏 |
 | `subtitle-translation` | `/en/tools/subtitle-translation/` | 字幕翻译首屏 |
 
-AI Sprite 创作与本地视频转精灵图是两个独立页面，分别采集。订单和积分使用独立 ID、名称和 `measurementScope: "sign-in-entry"` 元数据；看板切换到这两页时明确提示仅测未登录入口。匿名浏览器不注入登录信息，不读取账单，不下单、不生成素材。
+AI Sprite 创作与本地视频转精灵图是两个独立页面，分别采集。匿名浏览器不注入登录信息，不读取账单，不下单、不生成素材。
 
-素材库和订单入口保留现有 `noindex`，使用已有 `seoPolicy: "noindex"` 核验指令和其余 SEO 审计；原始报告和 SEO 总分完整保留。积分入口未声明该策略，直接使用原始 SEO 审计，不为分数修改网站的索引设置。
+订单与订阅未登录入口 `orders-login`（`/en/account/orders/`）、积分记录未登录入口 `credits-login`（`/en/account/credits/`）已从测试环境桌面端和手机端的活动监控清单移除，不再定时采集，也不能手动选择。既有历史批次、指标和未登录范围标注保留，历史摘要和报告索引继续发布；原始报告沿用既有保留期，不删除或改写旧记录。其他页面、定时频率、设备条件和预算保持原样。
+
+素材库保留现有 `noindex`，使用已有 `seoPolicy: "noindex"` 核验指令和其余 SEO 审计；原始报告和 SEO 总分完整保留。历史订单入口的 `noindex` 策略和积分入口的原始 SEO 审计记录保留，不修改网站的索引设置。
 
 新增清单进入配置比较标识，旧批次和下载报告保留，不改写历史。模板页、已停用页面、模型预览和 `/en/checkout/` 兼容跳转入口未加入本批；真实付款流程需要另设专用测试账号和私有报告。
 
@@ -69,7 +69,7 @@ GitHub schedule 只从默认分支触发，可能延迟或丢弃高负载时的�
 3. `runs`：默认 `3`；支持 `1`、`5`。
 4. `device`：默认 `all` 同时测桌面和手机；可选择 `desktop` 或 `mobile` 单独测量。此选项用于 Lighthouse 页面采集。
 
-页面 ID：`landing`、`home`、`ai-video`、`video-create`、`image-create`、`tools`、`clothes-transfer`、`editor`；测试环境另有 `subscribe`、`ai-ads-en` 及上表 14 个 ID，正式环境另有 `subscribe-login`。
+页面 ID：`landing`、`home`、`ai-video`、`video-create`、`image-create`、`tools`、`clothes-transfer`、`editor`；测试环境另有 `subscribe`、`ai-ads-en` 及上表 12 个 ID，正式环境另有 `subscribe-login`。
 
 英文广告页可选择 `environment=staging`、`routes=ai-ads-en`、`runs=3` 单独采集。路由的可选 `environments` 配置用于限制采集与看板展示范围；手动选择不适用的环境会在采集前明确拒绝。
 

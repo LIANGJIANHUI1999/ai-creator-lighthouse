@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import { retiredAccountRoutes } from './account-entry-fixtures.mjs';
 
 const config=JSON.parse(await fs.readFile('monitor.config.json','utf8'));
 function batch(device,score,id){return {schemaVersion:1,id,environment:'production',device,profile:device==='mobile'?config.mobileProfile:config.profile,generatedAt:new Date(Date.now()-(device==='mobile'?0:60000)).toISOString(),comparisonKey:'same-on-purpose',runsPerRoute:3,targets:config.targets,critical:config.critical,routes:[{...config.routes[0],metrics:{performance:score,accessibility:100,bestPractices:100,seo:100,lcpMs:1000,cls:0,tbtMs:10},status:'pass',successCount:3,expectedCount:3}]};}
@@ -49,13 +50,14 @@ test('a dashboard with only mobile measurements remains visible and uses its sha
  assert.match(h.element('metrics').innerHTML,/>65<small>/);assert.match(h.element('device-profile').textContent,/手机端/);
 });
 
-for (const locale of ['zh', 'en']) test(`signed-out account coverage is explicit across devices and environment switches (${locale})`, async t => {
+for (const locale of ['zh', 'en']) test(`historical signed-out account coverage is explicit across devices and environment switches (${locale})`, async t => {
+ const legacyConfig = { ...config, routes: [...config.routes, ...retiredAccountRoutes] };
  const records = ['desktop', 'mobile'].map(device => {
   const summary = batch(device, 98, `account-${device}`); summary.environment = 'staging';
-  summary.routes = ['orders-login', 'credits-login'].map(id => ({ ...summary.routes[0], ...config.routes.find(route => route.id === id) }));
+  summary.routes = ['orders-login', 'credits-login'].map(id => ({ ...summary.routes[0], ...retiredAccountRoutes.find(route => route.id === id) }));
   return summary;
  });
- const h = await harness(t, { schemaVersion: 1, config, summaries: [records[0]], summariesByDevice: { desktop: [records[0]], mobile: [records[1]] }, reports: {} }, `?env=staging&page=orders-login&lang=${locale}`, `account-${locale}`);
+ const h = await harness(t, { schemaVersion: 1, config: legacyConfig, summaries: [records[0]], summariesByDevice: { desktop: [records[0]], mobile: [records[1]] }, reports: {} }, `?env=staging&page=orders-login&lang=${locale}`, `account-${locale}`);
  const note = locale === 'zh' ? /仅测量未登录.*不代表登录后的订单/ : /signed-out sign-in entry only.*not authenticated orders/;
  assert.equal(h.element('selected-scope').hidden, false); assert.match(h.element('selected-scope').textContent, note);
  assert.match(h.element('selected-page').textContent, locale === 'zh' ? /订单.*未登录/ : /Orders.*signed out/);
@@ -67,4 +69,20 @@ for (const locale of ['zh', 'en']) test(`signed-out account coverage is explicit
  h.press({ env: 'production' });
  for (const id of ['orders-login', 'credits-login', 'asset', 'ai-sprite', 'image-edit', 'subtitle-translation']) assert.doesNotMatch(h.element('routes').innerHTML, new RegExp(`data-route="${id}"`));
  assert.equal(h.element('selected-scope').hidden, true); assert.equal(h.element('site-link').href, 'https://vidma.ai/');
+});
+
+for (const device of ['desktop', 'mobile']) test(`${device}: removed account deep links leave active monitoring while keeping historical download links`, async t => {
+ const record = batch(device, 98, `retired-${device}`); record.environment = 'staging';
+ record.routes.push(...retiredAccountRoutes.map(route => ({ ...record.routes[0], ...route })));
+ const original = structuredClone(record);
+ const records = { desktop: [], mobile: [], [device]: [record] };
+ const h = await harness(t, { schemaVersion: 1, config, summaries: records.desktop, summariesByDevice: records, reports: {} }, `?env=staging&page=orders-login&device=${device}`, `retired-${device}`);
+ for (const route of retiredAccountRoutes) {
+   assert.doesNotMatch(h.element('routes').innerHTML, new RegExp(`data-route="${route.id}"`));
+   assert.doesNotMatch(h.element('overview').innerHTML, new RegExp(`data-route="${route.id}"`));
+ }
+ assert.match(h.url(), /page=landing/);
+ assert.equal(h.element('selected-scope').hidden, true);
+ assert.match(h.element('history-list').innerHTML, new RegExp(`history/${record.id}.json`));
+ assert.deepEqual(record, original);
 });

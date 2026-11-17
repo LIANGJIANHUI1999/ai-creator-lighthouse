@@ -16,7 +16,7 @@ const audit = async url => ({ lhr: {
 for (const environment of ['production', 'staging']) for (const device of ['desktop', 'mobile']) {
   test(`${environment}/${device} collects every configured page in English with its query parameters`, async () => {
     const plan = selectPlan(config, { environment, device, runs: 1 });
-    assert.equal(plan.routes.length, environment === 'production' ? 9 : 24);
+    assert.equal(plan.routes.length, environment === 'production' ? 9 : 22);
     const visited = [];
     const result = await runCollection({ config, plan, metadata: {}, saveReport: async () => {}, audit: url => { visited.push(url); return audit(url); } });
     assert.equal(result.routes.every(route => route.successCount === 1), true);

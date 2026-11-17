@@ -153,7 +153,7 @@ test('archive appends new batches, exposes download metadata and preserves the o
 test('missing collector output becomes a visible failed batch, not a stale success', async t => {
   const root = await temporary(t);
   const result = await archive({ config, dataDirectory: path.join(root, 'data'), incomingDirectory: path.join(root, 'missing'), artifactList: [], runId: '100', runAttempt: '1', environments: ['staging'] });
-  assert.equal(result.incoming[0].routes.length, 24); assert.equal(result.incoming[0].routes.every(item => item.status === 'failed'), true); assert.equal(result.incoming[0].artifact, null);
+  assert.equal(result.incoming[0].routes.length, 22); assert.equal(result.incoming[0].routes.every(item => item.status === 'failed'), true); assert.equal(result.incoming[0].artifact, null);
 });
 test('dashboard build includes durable summaries and real downloadable page reports', async t => {
   const root = await temporary(t), source = path.join(root, 'sample'), output = path.join(root, 'dist');
@@ -258,7 +258,7 @@ test('accessibility and SEO still affect status even with a high performance sco
 test('English AI ads is included in scheduled staging collection and keeps the exact supplied URL', () => {
   const all = selectPlan(config, { environment: 'staging' });
   const selected = selectPlan(config, { environment: 'staging', routes: 'ai-ads-en' });
-  assert.equal(all.routes.length, 24);
+  assert.equal(all.routes.length, 22);
   assert.equal(selected.routes.length, 1);
   assert.equal(new URL(selected.routes[0].path, selected.origin).href, 'https://vidmaeditor-ios.web.app/en/ai-ads/');
   assert.equal(messages.zh[selected.routes[0].labelKey], 'AI 广告（英文）');
