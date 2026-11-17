@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { hash, runCollection, selectPlan } from './lib.mjs';
 import { batchId, collectionDirectory } from '../web/devices.mjs';
 import { loadLighthouseEngine } from './lighthouse-engine.mjs';
+import { cpuTraceFlags, saveCpuTrace } from './cpu-trace.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const config = JSON.parse(await fs.readFile(path.join(root, 'monitor.config.json'), 'utf8'));
@@ -16,6 +17,7 @@ const options = Object.fromEntries(process.argv.slice(2).map(value => {
 const plan = selectPlan(config, options);
 const output = path.join(root, 'artifacts', collectionDirectory(plan.environment, plan.device));
 await fs.mkdir(path.join(output, 'reports'), { recursive: true });
+const cpuTrace = process.env.LH_CPU_TRACE === '1';
 const generatedAt = new Date().toISOString();
 const runId = process.env.GITHUB_RUN_ID ?? `local-${Date.now()}`;
 const runAttempt = process.env.GITHUB_RUN_ATTEMPT ?? '1';
@@ -47,10 +49,11 @@ try {
     audit: url => {
       if (launchError) throw launchError;
       const { id, ...settings } = plan.profile;
-      return lighthouse(url, { ...settings, port: chrome.port, output: ['html', 'json'], logLevel: 'error', onlyCategories: ['performance', 'accessibility', 'best-practices', 'seo'], locale: 'zh' });
+      return lighthouse(url, { ...settings, ...cpuTraceFlags(cpuTrace), port: chrome.port, output: ['html', 'json'], logLevel: 'error', onlyCategories: ['performance', 'accessibility', 'best-practices', 'seo'], locale: 'zh' });
     },
     saveReport: async (name, result) => {
       const [html, json] = result.report;
+      if (cpuTrace) await saveCpuTrace(result, path.join(output, 'reports', `${name}.trace.json`));
       await Promise.all([
         fs.writeFile(path.join(output, 'reports', `${name}.html`), html),
         fs.writeFile(path.join(output, 'reports', `${name}.json`), json),

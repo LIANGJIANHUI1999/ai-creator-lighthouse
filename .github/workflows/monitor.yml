@@ -1,5 +1,5 @@
 name: Monitor
-run-name: Lighthouse · ${{ github.event_name }} · ${{ inputs.environment || 'all' }} · ${{ inputs.device || 'all' }}
+run-name: CPU diagnostic · ${{ github.event_name }} · ${{ inputs.environment || 'all' }} · ${{ inputs.device || 'all' }}
 on:
   push:
     branches: [main]
@@ -105,6 +105,7 @@ jobs:
       - name: Collect anonymous cold-cache measurements
         env:
           CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          LH_CPU_TRACE: '1'
           TARGET: ${{ matrix.environment }}
           ROUTES: ${{ inputs.routes || '' }}
           RUNS: ${{ inputs.runs || '3' }}
@@ -190,7 +191,7 @@ jobs:
   publish:
     name: Archive history and build dashboard
     needs: [quality-gate, collect, editor-collect]
-    if: ${{ always() && !cancelled() && github.event_name != 'pull_request' && needs.quality-gate.result == 'success' }}
+    if: ${{ always() && !cancelled() && github.event_name != 'pull_request' && needs.quality-gate.result == 'success' && github.ref_name != 'codex/mobile-cpu-diagnostics' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -292,7 +293,7 @@ jobs:
   collection-health:
     name: Collection health
     needs: [quality-gate, collect, editor-collect, publish, deploy]
-    if: ${{ always() && !cancelled() && github.event_name != 'pull_request' && needs.quality-gate.result == 'success' }}
+    if: ${{ always() && !cancelled() && github.event_name != 'pull_request' && needs.quality-gate.result == 'success' && github.ref_name != 'codex/mobile-cpu-diagnostics' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
