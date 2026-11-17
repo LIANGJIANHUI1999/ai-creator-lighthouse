@@ -68,3 +68,5 @@ const failed = summary.routes.filter(route => route.status === 'failed');
 const table = summary.routes.map(route => `| ${route.id} | ${route.status} | ${route.metrics.performance ?? '—'} | ${route.metrics.lcpMs == null ? '—' : Math.round(route.metrics.lcpMs)} | ${route.successCount}/${route.expectedCount} |`).join('\n');
 if (process.env.GITHUB_STEP_SUMMARY) await fs.appendFile(process.env.GITHUB_STEP_SUMMARY, `### ${plan.environment} · ${plan.device}\n\n| Route | Status | Performance | LCP ms | Samples |\n| --- | --- | --- | --- | --- |\n${table}\n\n`);
 console.log(`Saved ${summary.routes.length} routes, ${failed.length} incomplete. Reports are archived before the final health check.`);
+
+if (cpuTrace && failed.length) throw new Error('CPU diagnostic evidence is incomplete');

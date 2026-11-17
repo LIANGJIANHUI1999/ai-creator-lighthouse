@@ -13,8 +13,10 @@ test('preserves raw CPU trace evidence and rejects missing evidence', async () =
  try {
   const trace = {traceEvents:[{name:'ProfileChunk',args:{data:{cpuProfile:{nodes:[]}}}}]};
   const file = path.join(root,'trace.json');
-  await saveCpuTrace({artifacts:{traces:{defaultPass:trace}}},file);
+  await saveCpuTrace({artifacts:{Trace:trace}},file);
   assert.deepEqual(JSON.parse(await fs.readFile(file,'utf8')),trace);
   await assert.rejects(saveCpuTrace({},file), /missing/);
+  await assert.rejects(saveCpuTrace({artifacts:{Trace:{traceEvents:[]}}},file), /missing/);
+  await assert.rejects(saveCpuTrace({artifacts:{Trace:{traceEvents:'invalid'}}},file), /missing/);
  } finally {await fs.rm(root,{recursive:true,force:true})}
 });
