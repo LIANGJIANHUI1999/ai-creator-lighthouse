@@ -8,6 +8,7 @@ import { parse } from 'yaml';
 import { selectPlan, validateConfig, runCollection } from '../scripts/lib.mjs';
 import { archive } from '../scripts/archive.mjs';
 import { build } from '../scripts/build.mjs';
+import { latestForRoute } from '../web/model.mjs';
 import { retiredAccountRoutes } from './account-entry-fixtures.mjs';
 
 const config = JSON.parse(await fs.readFile('monitor.config.json', 'utf8'));
@@ -30,20 +31,16 @@ function report(url) {
   return { lhr, report: ['<!doctype html><title>Measured fixture</title>', JSON.stringify(lhr)] };
 }
 
-for (const device of ['desktop', 'mobile']) test(`${device}: all 12 remaining additions are English staging-only and collect three samples`, async () => {
-  const plan = selectPlan(config, { environment: 'staging', device, routes: ids.join(',') });
-  assert.equal(plan.routes.length, 12);
-  assert.equal(selectPlan(config, { environment: 'staging', device }).routes.length, 22);
-  assert.equal(selectPlan(config, { environment: 'production', device }).routes.length, 9);
+for (const environment of ['production', 'staging']) for (const device of ['desktop', 'mobile']) test(`${environment}/${device}: all 12 additional English tools and entries collect three samples`, async () => {
+  const plan = selectPlan(config, { environment, device, routes: ids.join(',') });
+  assert.equal(plan.routes.length, ids.length);
   const visited = [], saved = [];
   const result = await runCollection({ config, plan, metadata: { id: `coverage-${device}` }, audit: async url => { visited.push(url); return report(url); }, saveReport: async (name, data) => saved.push({ name, data }) });
   assert.equal(visited.length, 36); assert.equal(saved.length, 36);
   for (const route of result.routes) {
     assert.equal(route.path, additions[route.id]);
-    assert.deepEqual(route.environments, ['staging']);
-    assert.equal(visited.filter(url => url === `https://vidmaeditor-ios.web.app${route.path}`).length, 3);
+    assert.equal(visited.filter(url => url === `${plan.origin}${route.path}`).length, 3);
     assert.equal(route.successCount, 3); assert.equal(route.status, 'pass');
-    assert.throws(() => selectPlan(config, { environment: 'production', device, routes: route.id }), /unavailable/);
     if (route.seoPolicy) {
       assert.equal(route.metrics.seo, 66); assert.equal(route.seoAssessment.noindexConfirmed, true); assert.equal(route.seoAssessment.otherScore, 100);
       assert.equal(JSON.parse(saved.find(item => item.name.startsWith(`${route.id}-`)).data.report[1]).categories.seo.score, .66);
@@ -51,7 +48,7 @@ for (const device of ['desktop', 'mobile']) test(`${device}: all 12 remaining ad
   }
 });
 
-test('scheduled matrix includes both devices and the expanded staging list while retaining the original cron', async t => {
+test('the schedule measures identical routes on both environments and devices', async t => {
   const workflow = parse(await fs.readFile('.github/workflows/monitor.yml', 'utf8'));
   assert.deepEqual(workflow.on.schedule, [{ cron: '17 1,13 * * *' }]);
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'staging-plan-'));
@@ -65,7 +62,8 @@ test('scheduled matrix includes both devices and the expanded staging list while
   for (const target of matrix) {
     const plan = selectPlan(config, target);
     assert.equal(plan.runs, 3);
-    assert.equal(plan.routes.filter(route => ids.includes(route.id)).length, target.environment === 'staging' ? 12 : 0);
+    assert.deepEqual(plan.routes, config.routes);
+    assert.deepEqual(plan.routes.map(route => route.id), ['landing', 'home', 'subscribe', 'ai-video', 'video-create', 'image-create', 'tools', 'clothes-transfer', 'editor', 'ai-ads-en', ...ids]);
   }
 });
 
@@ -78,12 +76,25 @@ test('measurement scopes reject typos and keep unrelated public pages unrestrict
   assert.equal(retiredAccountRoutes[1].seoPolicy, undefined);
 });
 
-test('remaining pages preserve retired account histories and downloadable reports on both devices', async t => {
+test('aligning coverage preserves retired account and plans histories and downloadable reports', async t => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'staging-reports-'));
   t.after(() => fs.rm(directory, { recursive: true, force: true }));
   const incoming = path.join(directory, 'incoming'), dataDirectory = path.join(directory, 'data'), output = path.join(directory, 'dist');
   const history = path.join(dataDirectory, 'history'); await fs.mkdir(history, { recursive: true });
-  const legacy = { schemaVersion: 1, id: 'old-production', environment: 'production', generatedAt: '2026-11-10T00:00:00Z', routes: [], versions: {}, comparisonKey: 'old' };
+  const oldPlansRoute = { id: 'subscribe-login', labelKey: 'subscribeLogin', path: '/en/subscribe/', environments: ['production'] };
+  const oldPlansConfig = { ...config, routes: [oldPlansRoute] };
+  const oldPlansPlan = selectPlan(oldPlansConfig, { environment: 'production' });
+  const oldPlansReports = path.join(directory, 'old-plans');
+  await fs.mkdir(oldPlansReports);
+  const legacy = await runCollection({
+    config: oldPlansConfig, plan: oldPlansPlan,
+    metadata: { id: 'old-production', generatedAt: '2026-11-10T00:00:00Z', comparisonKey: 'old' },
+    audit: async url => report(url),
+    saveReport: async (name, result) => {
+      await fs.writeFile(path.join(oldPlansReports, `${name}.html`), result.report[0]);
+      await fs.writeFile(path.join(oldPlansReports, `${name}.json`), result.report[1]);
+    },
+  });
   const oldBytes = JSON.stringify(legacy); await fs.writeFile(path.join(history, `${legacy.id}.json`), oldBytes);
   const oldAccounts = [];
   const legacyConfig = { ...config, routes: [...config.routes, ...retiredAccountRoutes] };
@@ -103,8 +114,21 @@ test('remaining pages preserve retired account histories and downloadable report
   const archived = await archive({ config, dataDirectory, incomingDirectory: incoming, artifactList: [], runId: '900', runAttempt: '1', environments: ['staging'], devices: ['desktop', 'mobile'], routes: ids.join(',') });
   assert.equal(archived.history.length, 5); assert.equal(await fs.readFile(path.join(history, `${legacy.id}.json`), 'utf8'), oldBytes);
   for (const { summary, bytes } of oldAccounts) assert.equal(await fs.readFile(path.join(history, `${summary.id}.json`), 'utf8'), bytes);
-  await build({ config, history: archived.history, webDirectory: new URL('../web/', import.meta.url), outputDirectory: output, findReport: async (summary, reportName) => summary.id.startsWith('old-accounts-') ? path.join(directory, 'old-reports', summary.device, reportName) : path.join(incoming, summary.device === 'mobile' ? 'mobile/staging' : 'staging', 'reports', reportName) });
+  await build({
+    config, history: archived.history, webDirectory: new URL('../web/', import.meta.url), outputDirectory: output,
+    findReport: async (summary, reportName) => {
+      if (summary.id === legacy.id) return path.join(oldPlansReports, reportName);
+      if (summary.id.startsWith('old-accounts-')) return path.join(directory, 'old-reports', summary.device, reportName);
+      return path.join(incoming, summary.device === 'mobile' ? 'mobile/staging' : 'staging', 'reports', reportName);
+    },
+  });
   const data = JSON.parse(await fs.readFile(path.join(output, 'data.json'), 'utf8'));
+  assert.equal(await fs.readFile(path.join(output, 'history', `${legacy.id}.json`), 'utf8'), oldBytes);
+  assert.equal(latestForRoute(data.summaries, 'production', 'subscribe-login').summary.id, legacy.id);
+  assert.equal(latestForRoute(data.summaries, 'production', 'subscribe'), null);
+  const oldPlansLink = data.reportsByDevice.desktop.production['subscribe-login'];
+  assert.equal(oldPlansLink.summaryId, legacy.id);
+  assert.equal(JSON.parse(await fs.readFile(path.join(output, oldPlansLink.json), 'utf8')).requestedUrl, 'https://vidma.ai/en/subscribe/');
   for (const device of ['desktop', 'mobile']) {
     const summary = data.summariesByDevice[device].find(item => item.id.startsWith('900-'));
     assert.ok(summary.routes.every(route => !retiredAccountRoutes.some(old => old.id === route.id)));
@@ -126,12 +150,9 @@ test('remaining pages preserve retired account histories and downloadable report
   }
 });
 
-for (const device of ['desktop', 'mobile']) test(`${device}: retired account routes cannot be scheduled or selected manually`, () => {
-  const plan = selectPlan(config, { environment: 'staging', device });
-  assert.deepEqual(plan.routes.map(route => route.id), ['landing', 'home', 'subscribe', 'ai-video', 'video-create', 'image-create', 'tools', 'clothes-transfer', 'editor', 'ai-ads-en', ...ids]);
-  assert.equal(plan.runs, 3);
+for (const environment of ['production', 'staging']) for (const device of ['desktop', 'mobile']) test(`${environment}/${device}: retired account routes cannot be scheduled or selected manually`, () => {
   for (const route of retiredAccountRoutes) {
     assert.equal(config.routes.some(item => item.id === route.id), false);
-    assert.throws(() => selectPlan(config, { environment: 'staging', device, routes: route.id }), /unavailable/);
+    assert.throws(() => selectPlan(config, { environment, device, routes: route.id }), /unavailable/);
   }
 });
