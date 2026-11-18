@@ -28,17 +28,15 @@ async function temporary(t) {
 test('configuration selects both public deployment targets and preserves route parameters', () => {
   assert.equal(selectPlan(config, { environment: 'staging' }).origin, 'https://vidmaeditor-ios.web.app');
   assert.equal(selectPlan(config, { routes: 'video-create,landing' }).routes[1].path, '/en/video-create/?mode=text');
-  assert.equal(selectPlan(config).routes.length, 9);
+  assert.equal(selectPlan(config).routes.length, 22);
 });
-test('public plans and protected production entry have separate targets and all Lighthouse categories', async () => {
+test('both environments collect the public plans page with all Lighthouse categories', async () => {
   for (const environment of ['production','staging']) {
-    const id = environment === 'staging' ? 'subscribe' : 'subscribe-login';
-    const plan = selectPlan(config,{environment,routes:id,runs:3});
-    assert.ok(selectPlan(config,{environment}).routes.some(route => route.id === id));
+    const plan = selectPlan(config,{environment,routes:'subscribe',runs:3});
     assert.equal(plan.routes[0].path,'/en/subscribe/');
-    assert.equal(messages.zh[plan.routes[0].labelKey],environment === 'staging' ? '套餐与支付' : '套餐登录入口');
-    assert.equal(messages.en[plan.routes[0].labelKey],environment === 'staging' ? 'Plans & payment' : 'Plans sign-in entry');
-    assert.throws(()=>selectPlan(config,{environment,routes:environment === 'staging' ? 'subscribe-login' : 'subscribe'}),/unavailable/);
+    assert.equal(messages.zh[plan.routes[0].labelKey],'套餐与支付');
+    assert.equal(messages.en[plan.routes[0].labelKey],'Plans & payment');
+    assert.throws(()=>selectPlan(config,{environment,routes:'subscribe-login'}),/unavailable/);
     const result = await runCollection({config,plan,metadata:{id:`plans-${environment}`},audit:async url => ({lhr:lhr({requestedUrl:url,finalDisplayedUrl:url})}),saveReport:async()=>{}});
     assert.equal(result.routes[0].successCount,3);
     for (const key of ['performance','accessibility','bestPractices','seo']) assert.equal(result.routes[0].metrics[key],100);
@@ -255,15 +253,13 @@ test('accessibility and SEO still affect status even with a high performance sco
   }
 });
 
-test('English AI ads is included in scheduled staging collection and keeps the exact supplied URL', () => {
-  const all = selectPlan(config, { environment: 'staging' });
-  const selected = selectPlan(config, { environment: 'staging', routes: 'ai-ads-en' });
-  assert.equal(all.routes.length, 22);
-  assert.equal(selected.routes.length, 1);
-  assert.equal(new URL(selected.routes[0].path, selected.origin).href, 'https://vidmaeditor-ios.web.app/en/ai-ads/');
-  assert.equal(messages.zh[selected.routes[0].labelKey], 'AI 广告（英文）');
-  assert.equal(selectPlan(config, { environment: 'production' }).routes.length, 9);
-  assert.throws(() => selectPlan(config, { environment: 'production', routes: 'ai-ads-en' }), /unavailable/);
+test('English AI ads uses the same path on both environments', () => {
+  for (const environment of ['production', 'staging']) {
+    const selected = selectPlan(config, { environment, routes: 'ai-ads-en' });
+    assert.equal(selected.routes.length, 1);
+    assert.equal(selected.routes[0].path, '/en/ai-ads/');
+    assert.equal(messages.zh[selected.routes[0].labelKey], 'AI 广告（英文）');
+  }
 });
 
 test('route environment scopes reject unknown, empty and duplicate environments', () => {
@@ -273,9 +269,8 @@ test('route environment scopes reject unknown, empty and duplicate environments'
   }
 });
 
-test('production collector failure summaries exclude staging-only pages', async t => {
+test('production collector failure summaries include every monitored page', async t => {
   const root = await temporary(t);
   const result = await archive({ config, dataDirectory: path.join(root, 'data'), incomingDirectory: path.join(root, 'missing'), artifactList: [], runId: '100', runAttempt: '1', environments: ['production'] });
-  assert.equal(result.incoming[0].routes.length, 9);
-  assert.equal(result.incoming[0].routes.some(route => route.id === 'ai-ads-en'), false);
+  assert.deepEqual(result.incoming[0].routes.map(route => route.id), config.routes.map(route => route.id));
 });

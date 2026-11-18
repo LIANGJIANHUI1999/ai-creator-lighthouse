@@ -40,7 +40,7 @@ test('scheduled matrix includes four isolated targets and manual inputs can sele
  assert.equal(new Set(all.include.map(x=>x.directory)).size,4);assert.equal(new Set(all.include.map(x=>x.artifactPrefix)).size,4);
  assert.deepEqual(collectionMatrix(config,{environment:'staging',device:'mobile',routes:'subscribe'}).include,[{environment:'staging',device:'mobile',directory:'mobile/staging',artifactPrefix:'lighthouse-mobile-staging'}]);
  assert.equal(collectionMatrix(config,{device:'desktop'}).include.length,2);
- assert.throws(()=>collectionMatrix(config,{device:'mobile',routes:'subscribe'}),/unavailable/);
+ assert.deepEqual(collectionMatrix(config,{device:'mobile',routes:'subscribe'}).include.map(target=>target.environment),['production','staging']);
 });
 test('phone collection keeps its profile, counts and errors independently',async()=>{
  const plan=selectPlan(config,{environment:'staging',device:'mobile',routes:'subscribe',runs:3});

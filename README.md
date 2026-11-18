@@ -13,15 +13,13 @@
 | 正式环境 `production` | https://vidma.ai |
 | 测试环境 `staging` | https://vidmaeditor-ios.web.app |
 
-默认测量英文官网规范首页 `/`、工作台、套餐与支付入口 `/en/subscribe/`、短剧创作、视频创作、图片创作、工具中心、AI 换装、编辑器，共 9 个页面入口。测试环境额外覆盖英文广告创作页 `/en/ai-ads/`（看板名称“AI 广告（英文）”，ID `ai-ads-en`），因此正式环境测 9 页；测试环境在这 10 页基础上额外保留下列 12 个英文入口，共测 22 页；全部采集目标均为英文页面，除首页使用规范入口 `/` 外，其余路径保留 `/en/` 前缀。配置集中在 `monitor.config.json`，源自业务项目原有 Lighthouse 桌面端配置。
+正式与测试环境共用 `monitor.config.json` 中的 22 个英文页面入口。清单包含官网规范首页 `/`、工作台、套餐与支付、短剧创作、视频创作、图片创作、工具中心、AI 换装、编辑器、AI 广告及下表 12 个入口。除首页外，路径均以 `/en/` 开头。
 
 首页的 `/en/` 别名与 `/` 展示相同内容，canonical 指向 `/`。首页采集改用 `/`，避免 Lighthouse 将别名指向根路径的 canonical 判为无效；网站内容和 canonical 设置不变。入口变化会开启新的比较序列，旧 `/en/` 报告和指标保留，不能将两种入口的分数变化解释为网页优化收益。
 
-测试环境 `/en/subscribe/` 可匿名展示完整套餐，ID 为 `subscribe`。正式环境当前会显示登录弹窗，单独以 `subscribe-login`（套餐登录入口）采集；该成绩仅代表登录入口，不代表登录后套餐或 Stripe 表单性能，两种状态不会合并趋势。正式环境开放匿名套餐后应重新确认页面内容再调整监控目标。采集只加载页面，不创建订单或提交付款。
+两个环境均通过 `/en/subscribe/` 匿名采集套餐与支付页面，使用 ID `subscribe`。正式环境之前的 `subscribe-login`（套餐登录入口）批次仍可从历史中下载。采集范围为套餐页面加载，不创建订单或提交付款。
 
-### 测试环境新增英文入口
-
-以下页面只加入 `staging`，同时用于桌面和手机采集，每页每种设备默认 3 次。新增目标自动接入既有定时任务，不改变正式环境、工具版本、设备条件或性能预算。
+### 素材库与工具入口
 
 | ID | 英文入口 | 采集范围 |
 | --- | --- | --- |
@@ -69,9 +67,9 @@ GitHub schedule 只从默认分支触发，可能延迟或丢弃高负载时的�
 3. `runs`：默认 `3`；支持 `1`、`5`。
 4. `device`：默认 `all` 同时测桌面和手机；可选择 `desktop` 或 `mobile` 单独测量。此选项用于 Lighthouse 页面采集。
 
-页面 ID：`landing`、`home`、`ai-video`、`video-create`、`image-create`、`tools`、`clothes-transfer`、`editor`；测试环境另有 `subscribe`、`ai-ads-en` 及上表 12 个 ID，正式环境另有 `subscribe-login`。
+两个环境支持相同的页面 ID：`landing`、`home`、`subscribe`、`ai-video`、`video-create`、`image-create`、`tools`、`clothes-transfer`、`editor`、`ai-ads-en` 及上表的 12 个 ID。
 
-英文广告页可选择 `environment=staging`、`routes=ai-ads-en`、`runs=3` 单独采集。路由的可选 `environments` 配置用于限制采集与看板展示范围；手动选择不适用的环境会在采集前明确拒绝。
+例如，选择 `environment=all`、`routes=ai-ads-en`、`runs=3` 可对两个环境的英文广告页分别采集。
 
 推送到 `main` 会执行检查并用既有记录刷新看板，避免修改看板时重复测量线上页面。定时任务与手动运行执行实际采集；PR 仅执行代码质量检查与测试，不采集、不写历史、不部署。
 

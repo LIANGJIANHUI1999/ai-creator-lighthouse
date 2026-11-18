@@ -34,7 +34,7 @@ test('dashboard shows independent statuses in the heading, overview, sidebar, tr
   await new Promise(resolve => setImmediate(resolve));
 
   assert.equal(element('load-status').hidden, true);
-  assert.doesNotMatch(element('routes').innerHTML, /ai-ads-en/);
+  assert.match(element('routes').innerHTML, /ai-ads-en/);
   const heading = element('selected-status').innerHTML;
   assert.match(heading, /data-status-group="performance"[^]*?class="status pass"/);
   assert.match(heading, /data-status-group="quality"[^]*?class="status warning"/);
@@ -63,8 +63,9 @@ test('dashboard shows independent statuses in the heading, overview, sidebar, tr
   press({ dataset: { route: 'ai-ads-en' } });
   assert.equal(element('site-link').href, 'https://vidmaeditor-ios.web.app/en/ai-ads/');
   press({ dataset: { env: 'production' } });
-  assert.equal(element('selected-page').textContent, 'Landing page');
-  assert.doesNotMatch(element('routes').innerHTML, /ai-ads-en/);
+  assert.equal(element('selected-page').textContent, 'AI ads (EN)');
+  assert.equal(element('site-link').href, 'https://vidma.ai/en/ai-ads/');
+  press({ dataset: { route: 'landing' } });
   press({ dataset: { env: 'staging' } });
   const changed = element('selected-status').innerHTML;
   assert.match(changed, /data-status-group="performance"[^]*?class="status critical"/);

@@ -66,8 +66,9 @@ for (const locale of ['zh', 'en']) test(`historical signed-out account coverage 
  h.press({ device: 'mobile' }); assert.equal(h.element('selected-scope').hidden, false); assert.match(h.element('selected-scope').textContent, note);
  h.press({ route: 'credits-login' }); assert.equal(h.element('selected-scope').hidden, false); assert.equal(h.element('site-link').href, 'https://vidmaeditor-ios.web.app/en/account/credits/');
  h.press({ route: 'asset' }); assert.equal(h.element('selected-scope').hidden, true); assert.equal(h.element('selected-scope').textContent, '');
+ h.press({ route: 'credits-login' });
  h.press({ env: 'production' });
- for (const id of ['orders-login', 'credits-login', 'asset', 'ai-sprite', 'image-edit', 'subtitle-translation']) assert.doesNotMatch(h.element('routes').innerHTML, new RegExp(`data-route="${id}"`));
+ for (const { id } of retiredAccountRoutes) assert.doesNotMatch(h.element('routes').innerHTML, new RegExp(`data-route="${id}"`));
  assert.equal(h.element('selected-scope').hidden, true); assert.equal(h.element('site-link').href, 'https://vidma.ai/');
 });
 
